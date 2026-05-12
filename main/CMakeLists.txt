@@ -1,0 +1,33 @@
+idf_component_register(
+    SRCS
+        "main.c"
+        "camera_control.c"
+        "vision_pipeline.cpp"
+        "web_server.c"
+        "wifi_manager.c"
+        "servo_control.c"
+        "oled_control.c"
+        "sd_card.c"
+        "training.c"
+        "mic_capture.c"
+        "mmwave_sensor.c"
+        "ft_activation.c"
+    INCLUDE_DIRS "."
+    REQUIRES
+        nvs_flash
+        esp_wifi
+        esp_netif
+        esp_event
+        esp_http_server
+        esp_timer
+        esp_driver_ledc
+        esp_driver_i2c
+        esp_driver_i2s
+        esp_driver_spi
+        esp_driver_sdspi
+        esp_driver_uart
+        fatfs
+        sdmmc
+        espressif__esp32-camera
+        espressif__human_face_detect
+)

@@ -1,0 +1,294 @@
+Slide 1 — Title and Scope
+
+Fault-Tolerant Multimodal Presence Verification and Safe Activation Policies on ESP32-S3 Using mmWave Radar and Vision
+
+This project studies a fault-tolerant activation subsystem for a room-scale assistive sensing platform. The broader CPRE 5750 project is a privacy-preserving multimodal assistant using an ESP32-S3 Sense, camera, microphone, mmWave presence sensor, and pan-tilt motors for gesture/audio interaction and user tracking. For CPRE 5450, the scope is narrowed to one dependability-critical part: deciding whether the system should activate high-power or privacy-sensitive functions such as camera inference, audio capture, or actuation. The project therefore focuses on fault detection, diagnosis, and safe activation rather than full object recognition or full assistant behavior.
+
+Scope statement:
+The CPRE 5450 report treats the activation/presence-verification subsystem as a fault-tolerant embedded system. It uses heterogeneous sensing, temporal redundancy, cross-sensor consistency checking, and soft/hard safe states to reduce false activations and missed activations.
+
+Slide 2 — Application Context: Why Activation Matters
+
+Room-scale assistive systems must decide when to wake up, when to sense, and when to interact. This is especially important in privacy-preserving systems for blind or visually impaired users because unnecessary camera/audio activation can expose private data, while missed activation can deny assistance. The CPRE 5750 system already uses a privacy-centered design: local perception, gesture-controlled recording, minimal data transmission, and camera/audio activation only when the user intentionally engages.
+
+In this project, activation is treated as the safety boundary of the system. A false positive means the system activates when no valid user is present, wasting power and possibly enabling unnecessary sensing. A false negative means the system does not activate when a user actually needs assistance. The CPRE 5450 work therefore focuses on making this activation decision dependable under sensor faults, timing faults, and environmental uncertainty.
+
+Key idea:
+This is not only a sensor-fusion problem. It is a fault-tolerant decision problem.
+
+Slide 3 — Problem Statement and Failure Modes
+
+A single-modality activation scheme is brittle because each sensor has different failure conditions. A camera may fail under low light, motion blur, partial occlusion, or frame-buffer problems. A mmWave radar may detect presence through lighting-independent sensing, but it can still be affected by clutter, reflections, moving curtains, fans, or incorrect range-gate tuning. The 24 GHz mmWave sensor documentation identifies the module as an FMCW human-presence sensor with adjustable range and UART support, but it also warns that installation environment and moving non-human objects can affect detection behavior.
+
+The two major system-level failures are:
+
+False activation:
+The system activates camera/audio/actuation even though no valid user is present. This wastes battery and processing resources and may create privacy concerns.
+
+Missed activation:
+The system fails to activate even though the user is present and needs interaction. This is a denial-of-service-style failure for an assistive system.
+
+The CPRE 5450 report evaluates how redundancy, diagnosis, and safe-state behavior can reduce both failure classes.
+
+Slide 4 — Hardware Platform and Design Constraints
+
+The hardware basis is an ESP32-S3-based embedded edge device with camera input and a 24 GHz mmWave radar module. The ESP32-S3 is relevant because it is not just a generic microcontroller; it provides a dual-core Xtensa LX7 processor up to 240 MHz, vector instructions for signal processing and neural-network workloads, UART/I2S/I2C/SPI/PWM peripherals, and security features such as secure boot, flash encryption, digital signature, HMAC, and the World Controller.
+
+The mmWave sensor is useful as a low-power sentinel because it can detect human presence in motion and stationary states, uses FMCW sensing, supports UART, and has an adjustable detection distance around 0.75 m to 6 m with ±60° detection angle and 0.75 m distance resolution.
+
+However, the ESP32-S3 is still resource-constrained compared with a laptop or smartphone. The broader CPRE 5750 proposal notes limited CPU, RAM, and GPU capability, which is why advanced speech recognition and object recognition are offloaded to an Android device. For CPRE 5450, this motivates a lightweight activation controller instead of a heavy deep-learning pipeline.
+
+Slide 5 — Known Approach 1: mmWave-Only Presence Sensing
+
+mmWave radar is attractive for indoor presence detection because it is contactless, lighting-independent, and more privacy-preserving than always-on vision. Prior work has shown that mmWave can be used for indoor detection and tracking of people, but accuracy can degrade as the number of people or environmental complexity increases. Huang et al. studied indoor people detection and tracking using mmWave radar, showing that mmWave is feasible for indoor monitoring but still has limitations under multi-person and real-room conditions.
+
+Strengths:
+mmWave sensing works without visible light, can detect motion and micro-motion, and does not directly capture identifiable images.
+
+Weaknesses:
+Radar-only activation can be vulnerable to clutter, reflections, static/moving ambiguity, and nuisance motion from fans or curtains. The Seeed sensor documentation also explicitly identifies environmental concerns such as moving non-human objects and strong reflectors as factors that can affect sensing.
+
+Fault-tolerance analysis:
+Radar-only activation is efficient, but it has weak diagnosability. If radar reports “presence,” the system has no independent modality to determine whether the cause is a true person, clutter, or sensor fault.
+
+Slide 6 — Known Approach 2: Camera-Only or Vision-Heavy Activation
+
+Camera-based sensing provides semantic information that radar cannot easily provide. A camera can support face/body detection, gesture recognition, object localization, and user tracking. In the larger CPRE 5750 system, the camera is used for face/body detection, tracking, hand detection, and gesture recognition.
+
+Strengths:
+Vision can confirm spatial structure, body/face cues, and user intent. It can also support higher-level interaction such as open-palm activation, pointing gestures, and visual confirmation.
+
+Weaknesses:
+Camera-only activation is sensitive to lighting, occlusion, motion blur, privacy concerns, and memory/processing limits. On ESP32-S3, camera processing also competes with other real-time tasks. The official ESP32 camera driver documentation warns that non-JPEG formats can stress PSRAM and that image data may be lost, especially under heavier memory/bus load.
+
+Fault-tolerance analysis:
+Vision-heavy activation gives richer information, but it is expensive and fragile on a constrained MCU. It should be used as a verifier, not as an always-on primary trigger.
+
+Slide 7 — Known Approach 3: Camera + mmWave Fusion
+
+Prior research supports combining mmWave and cameras for indoor occupancy sensing. Li and Hishiyama proposed an indoor people counting and tracking system using mmWave sensors and sub-sensors, where camera assistance improved detection beyond a radar-only scheme. Their ScienceDirect paper reports the use of mmWave plus sub-sensors for indoor people counting/tracking, motivating the use of heterogeneous sensing for better reliability.
+
+A later camera-mmWave fusion system for indoor occupancy detection and tracking also supports the idea that camera and radar provide complementary information: radar contributes privacy-preserving presence sensing, while cameras improve spatial/visual confirmation.
+
+Strengths:
+Fusion improves robustness because camera and radar fail differently. Radar handles darkness better; vision handles semantic ambiguity better.
+
+Weaknesses:
+Naive fusion is not automatically fault-tolerant. Simple AND logic may increase missed activations if one sensor temporarily fails. Simple OR logic may increase false activations if one sensor is noisy.
+
+Fault-tolerance analysis:
+The project needs health-aware fusion, not just sensor fusion. The decision layer must track confidence, freshness, disagreement, and fault persistence.
+
+Slide 8 — Known Approach 4: Uncertainty-Aware Sensor Fusion for Fault Diagnosis
+
+Yu et al. propose a multi-source sensor correlation adaptive fusion framework with uncertainty quantification for intelligent fault diagnosis. Their work argues that multi-source sensor fusion is promising, but reliability is challenged by variations in signal quality and inconsistencies across sensors. Their MSCAF framework uses Dempster–Shafer evidence theory and Dirichlet-distribution-based uncertainty modeling to split sensors into high-confidence and low-confidence groups and weight them adaptively.
+
+Strengths:
+This approach directly supports the idea that sensors should not always be trusted equally. A low-confidence or inconsistent sensor should be down-weighted instead of blindly fused.
+
+Weaknesses:
+The full MSCAF method is likely too heavy for an ESP32-S3 implementation because it uses deep feature extraction and graph-based modeling designed for richer industrial fault-diagnosis datasets.
+
+How it supports this project:
+The CPRE 5450 design adapts the concept, not the full algorithm. Instead of implementing full DS/Dirichlet fusion, the project uses a lightweight confidence score:
+
+C
+i
+	​
+
+=w
+s
+	​
+
+S
+i
+	​
+
++w
+f
+	​
+
+F
+i
+	​
+
++w
+t
+	​
+
+T
+i
+	​
+
+
+where S
+i
+	​
+
+ is sensor agreement, F
+i
+	​
+
+ is freshness/timestamp validity, and T
+i
+	​
+
+ is task/transport health.
+
+Slide 9 — Known Approach 5: OOD Detection and Fault Injection
+
+HOOD studies real-time human presence and out-of-distribution detection using FMCW radar. This is important because indoor radar systems can see clutter or non-human motion that looks like valid presence. HOOD frames the problem as not only detecting humans but also rejecting out-of-distribution radar inputs such as clutter or abnormal environmental conditions.
+
+Fault injection is also important for validation. Moradi and Denil’s machine-learning-assisted model-implemented fault injection work supports the idea that validation should deliberately vary the type, location, and timing of injected faults. This is relevant because the proposed subsystem must be tested under dropped radar packets, corrupted camera frames, stale data, and timing delays.
+
+Strengths:
+OOD detection and fault injection move the project from “works in normal conditions” to “tested under abnormal conditions.”
+
+Weaknesses:
+Research-grade radar OOD methods may require richer radar data than the UART-output 24 GHz module provides. Therefore, the project uses lightweight OOD-inspired heuristics rather than reproducing HOOD directly.
+
+Slide 10 — Proposed Fault-Tolerant Architecture
+
+The proposed architecture treats activation as a fault-tolerant state machine. The mmWave sensor acts as a low-power sentinel. When radar indicates possible presence, the camera is activated briefly for confirmation. The fusion layer evaluates agreement, confidence, freshness, and timing health before allowing full activation.
+
+Architecture blocks:
+
+Radar input path: UART parsing, timestamping, range-gate state, radar confidence.
+Camera input path: frame capture, visual confirmation, frame freshness, visual confidence.
+Health monitor: task delays, stale samples, watchdog status, queue overflow, packet drops.
+Diagnosis logic: cross-sensor agreement, temporal redundancy, transient/persistent classification.
+Activation state machine: normal activation, soft safe state, hard safe state, degraded mode.
+
+The ESP-IDF Task Watchdog Timer can monitor whether tasks execute within expected time bounds and detect tasks that run too long without yielding, making it useful for detecting timing/resource faults in this system.
+
+Connection to previous proposal:
+This architecture implements the CPRE 5450 goal of using redundancy, error detection, diagnosis, and graceful degradation in an embedded edge AI activation pipeline.
+
+Slide 11 — Fault Model and Diagnosis Logic
+
+The system classifies faults into several categories:
+
+Fault Class	Example	Observable Symptom	Response
+Camera false negative	Low light or occlusion	Radar says present; camera says absent	Revalidate; soft safe state
+Radar false positive	Fan, curtain, reflection	Radar says present; camera sees no user	Delay activation; request confirmation
+UART/transport fault	Dropped radar packet	Missing/stale radar timestamp	Parser reset; suppress activation
+Timing fault	Camera task delay	Fusion uses old frame	Reject stale frame; watchdog recovery
+Persistent sensor fault	Camera init failure	Repeated visual failure	Hard safe state; isolate camera
+SDC-like output	Stale but plausible data	Output appears valid but conflicts with system state	Invariant check; rollback health state
+
+The key diagnosis idea is that sensor disagreement is not automatically treated as “no person” or “person present.” Instead, disagreement is treated as evidence of possible fault. This matches system-level diagnosis thinking: components can test or cross-check each other, and disagreement patterns can indicate which part is less trustworthy. The CPRE 5450 proposal already defines cross-sensor consistency checking, transient/persistent fault classification, and adaptive fault handling as the central mechanisms.
+
+Slide 12 — Safe-State and Recovery Policy
+
+The proposed system uses a two-tier safe-state policy.
+
+Soft safe state:
+Used for temporary inconsistency. The system suppresses full activation, collects another radar/camera sample, checks timestamps, and retries under a bounded time window.
+
+Hard safe state:
+Used for persistent inconsistency. The system blocks automatic activation, isolates low-confidence inputs, and optionally notifies the user while maintaining minimal power operation. This matches the earlier CPRE 5450 design: temporary inconsistencies trigger re-validation, while persistent faults block activation and isolate unreliable inputs.
+
+Recovery block idea:
+A primary visual confirmer can be backed up by a simpler alternate confirmer. For example, if face/body detection fails or times out, the system can fall back to simpler frame-difference/motion confirmation. This follows the classical recovery-block concept: try primary method, apply acceptance test, then try alternate method if the primary result is unacceptable. Randell’s software fault-tolerance work is the classical reference for this approach.
+
+Design philosophy:
+When uncertain, the system should fail into non-activation, not unsafe activation.
+
+Slide 13 — Evaluation Plan and Metrics
+
+The project evaluation compares four designs:
+
+Radar-only activation
+Camera-only activation
+Naive fusion using simple AND/OR decision logic
+Proposed fault-tolerant fusion with confidence, diagnosis, and safe states
+
+Fault injection tests:
+
+dropped radar packets
+radar framing errors
+camera blur or blackout
+stale camera frames
+low-light vision degradation
+moving clutter such as fan/curtain
+induced task timing delays
+CPU overload or watchdog event
+
+Environmental tests:
+
+empty room
+one user entering/exiting
+static seated user
+low light
+reflective surface
+moving non-human object
+
+Metrics:
+
+FAR=
+Total Non-user Trials
+False Activations
+	​
+
+MDR=
+Total Valid User Trials
+Missed Activations
+	​
+
+Fault Coverage=
+Total Injected Faults
+Detected Injected Faults
+	​
+
+
+Additional metrics include detection latency, time-to-safe-state, recovery time, and camera duty cycle. The earlier CPRE 5450 proposal already defines false activation rate, missed activation rate, fault coverage, and latency/energy overhead as evaluation metrics.
+
+Slide 14 — Analysis of Existing Solutions vs. Proposed Improvement
+
+Existing camera-only and radar-only systems are useful but incomplete from a fault-tolerance perspective. Radar-only systems are low-power and privacy-preserving, but they have weak semantic confirmation and are vulnerable to clutter. Camera-only systems provide semantic information but are sensitive to lighting, consume more resources, and raise privacy concerns. Naive fusion improves average detection but does not explicitly diagnose faults or provide safe-state behavior.
+
+The proposed improvement is a health-aware activation controller. It adds:
+
+heterogeneous redundancy through radar + vision
+temporal redundancy through repeated bounded confirmation
+confidence/freshness checks before activation
+explicit transient vs. persistent fault classification
+soft/hard safe-state behavior
+fault-injection-based evaluation
+ESP32-S3 watchdog/task monitoring for timing faults
+
+This makes the contribution different from pure sensing papers. The goal is not to produce the best human detector, but to make the activation boundary dependable under realistic embedded faults. Prior sensor-fusion and uncertainty-aware diagnosis work supports adaptive trust in sensors, but this project translates that idea into a lightweight MCU-level safe activation policy.
+
+Slide 15 — Expected Contribution and Limitations
+
+Expected contribution:
+The proposed subsystem should reduce false activations compared with radar-only activation, reduce missed activations compared with strict naive AND fusion, and reduce privacy/resource exposure compared with camera-heavy activation. The expected tradeoff is slightly higher activation latency because the system performs revalidation before activating.
+
+Why this matters:
+For a privacy-preserving assistive platform, ambiguity should not automatically trigger camera/audio/actuator activation. Instead, the system should explicitly represent uncertainty and enter a safe state until confidence improves.
+
+Limitations:
+The project uses a low-cost 24 GHz UART-output mmWave module, not a research-grade radar with raw radar cubes. Therefore, advanced radar OOD algorithms such as HOOD are used as conceptual support rather than directly reproduced. The evaluation is also room-scale and will likely involve limited users and limited environmental conditions. These limitations are acceptable because the CPRE 5450 focus is fault-tolerant design and analysis, not a production-ready assistive system.
+
+Final claim:
+This work demonstrates how classical fault-tolerance ideas—redundancy, detection, diagnosis, recovery blocks, fault injection, and graceful degradation—can be applied to a modern ESP32-S3 edge AI activation subsystem.
+
+Slide 16 — References
+
+Use these in your final slide in IEEE style:
+
+[1] S. Li and R. Hishiyama, “An Indoor People Counting and Tracking System Using mmWave Sensor and Sub-sensors,” IFAC-PapersOnLine, 2023, doi: 10.1016/j.ifacol.2023.10.577.
+
+[2] Y. Yu, H. R. Karimi, L. Gelman, J. Tian, and P. Mei, “A Novel Multi-Source Sensor Correlation Adaptive Fusion Framework with Uncertainty Quantification for Intelligent Fault Diagnosis,” Reliability Engineering & System Safety, vol. 267, 2026, Art. no. 111812, doi: 10.1016/j.ress.2025.111812.
+
+[3] M. Moradi and J. Denil, “Machine-Learning Assisted Model-Implemented Fault Injection,” CEUR Workshop Proceedings, 2020.
+
+[4] S. M. Kahya, M. S. Yavuz, and E. Steinbach, “HOOD: Real-Time Human Presence and Out-of-Distribution Detection Using FMCW Radar,” IEEE Transactions on Radar Systems, 2025, doi: 10.1109/TRS.2024.3514840.
+
+[5] N. Zhang, H. Li, A. Zahid, Y. Tian, and W. Li, “A Robust mmWave Radar Framework for Accurate People Counting and Motion Classification,” Sensors, vol. 26, no. 4, Art. no. 1289, 2026, doi: 10.3390/s26041289.
+
+[6] Espressif Systems, “ESP32-S3 Series Datasheet and Technical Documentation.”
+
+[7] Espressif Systems, “ESP-IDF Watchdogs: ESP32-S3 Programming Guide.”
+
+[8] Seeed Studio, “24GHz mmWave Sensor for XIAO: Human Static Presence.”

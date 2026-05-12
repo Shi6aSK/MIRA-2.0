@@ -3,3 +3,17 @@ managed_components/
 sdkconfig.old
 *.pyc
 __pycache__/
+
+# LaTeX build artifacts and report files
+*.aux
+*.log
+*.out
+*.toc
+*.pdf
+*.tex
+Singh_Shobhit_CPRE5450_Mermaid_Diagrams.md
+presentation_content.txt
+
+# VS Code workspace settings
+.vscode/
+.clangd

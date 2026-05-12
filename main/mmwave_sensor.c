@@ -30,7 +30,7 @@
 
 static const char *TAG = "mmwave";
 
-/* ── Frame constants ────────────────────────────────────────────── */
+/* -- Frame constants ---------------------------------------------- */
 #define FRAME_SOF          0x53
 #define FRAME_EOF          0x54
 #define FRAME_MAX_LEN      64
@@ -47,12 +47,12 @@ static const char *TAG = "mmwave";
 /* Max consecutive dropped frames before we log a transport fault */
 #define MMWAVE_DROP_WARN   5
 
-/* ── Internal state ─────────────────────────────────────────────── */
+/* -- Internal state ----------------------------------------------- */
 static mmwave_reading_t  s_reading  = {0};
 static SemaphoreHandle_t s_mutex    = NULL;
 static uint32_t          s_drops    = 0;
 
-/* ── CRC-8 (poly 0x31, init 0x00) ──────────────────────────────── */
+/* -- CRC-8 (poly 0x31, init 0x00) -------------------------------- */
 static uint8_t crc8(const uint8_t *data, int len)
 {
     uint8_t crc = 0x00;
@@ -64,7 +64,7 @@ static uint8_t crc8(const uint8_t *data, int len)
     return crc;
 }
 
-/* ── Parse one complete frame buffer ────────────────────────────── */
+/* -- Parse one complete frame buffer ------------------------------ */
 static void parse_frame(const uint8_t *buf, int len)
 {
     if (len < 6) { s_drops++; return; }           /* minimum: SOF+len2+type+head+crc+EOF */
@@ -109,7 +109,7 @@ static void parse_frame(const uint8_t *buf, int len)
     ESP_LOGD(TAG, "state=%d energy=%d ts=%lu", (int)r.state, r.raw_energy, (unsigned long)r.timestamp_ms);
 }
 
-/* ── Background RX task ─────────────────────────────────────────── */
+/* -- Background RX task ------------------------------------------- */
 static void mmwave_rx_task(void *arg)
 {
     uint8_t  buf[FRAME_MAX_LEN];
@@ -121,7 +121,7 @@ static void mmwave_rx_task(void *arg)
         int rx = uart_read_bytes(MMWAVE_UART_NUM, &byte, 1, pdMS_TO_TICKS(200));
 
         if (rx <= 0) {
-            /* Timeout – check if we should mark stale */
+            /* Timeout - check if we should mark stale */
             uint32_t now = (uint32_t)(esp_timer_get_time() / 1000);
             xSemaphoreTake(s_mutex, portMAX_DELAY);
             uint32_t last_ts = s_reading.timestamp_ms;
@@ -158,7 +158,7 @@ static void mmwave_rx_task(void *arg)
     }
 }
 
-/* ── Public API ─────────────────────────────────────────────────── */
+/* -- Public API --------------------------------------------------- */
 
 esp_err_t mmwave_init(void)
 {

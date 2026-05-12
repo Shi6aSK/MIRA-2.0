@@ -1,7 +1,7 @@
 /*
  * ft_activation.c
  * ---------------
- * Fault-Tolerant Activation Controller — CPRE 5450
+ * Fault-Tolerant Activation Controller -- CPRE 5450
  *
  * Implements the seven-state FSM described in ft_activation.h.
  *
@@ -13,17 +13,17 @@
  *   5. Apply state-transition rules.
  *
  * State transitions:
- *   IDLE             + radar_present              → RADAR_CANDIDATE
- *   RADAR_CANDIDATE  + camera confirms            → VISUAL_CONFIRM
- *   VISUAL_CONFIRM   + agreement + C >= min_conf  → ACTIVE
- *   VISUAL_CONFIRM   + mismatch                   → SOFT_SAFE
- *   ACTIVE           + health fault               → SOFT_SAFE
- *   SOFT_SAFE        + resolved                   → VISUAL_CONFIRM
- *   SOFT_SAFE        + mismatch_count >= k_hard   → HARD_SAFE
- *   SOFT_SAFE        + both sensors faulted       → DEGRADED
- *   HARD_SAFE        + manual reset               → IDLE
- *   ACTIVE           + session_done               → IDLE
- *   any              + radar stale + cam stale    → DEGRADED
+ *   IDLE             + radar_present              -> RADAR_CANDIDATE
+ *   RADAR_CANDIDATE  + camera confirms            -> VISUAL_CONFIRM
+ *   VISUAL_CONFIRM   + agreement + C >= min_conf  -> ACTIVE
+ *   VISUAL_CONFIRM   + mismatch                   -> SOFT_SAFE
+ *   ACTIVE           + health fault               -> SOFT_SAFE
+ *   SOFT_SAFE        + resolved                   -> VISUAL_CONFIRM
+ *   SOFT_SAFE        + mismatch_count >= k_hard   -> HARD_SAFE
+ *   SOFT_SAFE        + both sensors faulted       -> DEGRADED
+ *   HARD_SAFE        + manual reset               -> IDLE
+ *   ACTIVE           + session_done               -> IDLE
+ *   any              + radar stale + cam stale    -> DEGRADED
  */
 
 #include "ft_activation.h"
@@ -36,7 +36,7 @@
 
 static const char *TAG = "ft";
 
-/* ── Defaults ───────────────────────────────────────────────────── */
+/* -- Defaults ----------------------------------------------------- */
 static const ft_config_t k_defaults = {
     .w_agreement    = 0.50f,
     .w_freshness    = 0.30f,
@@ -48,7 +48,7 @@ static const ft_config_t k_defaults = {
     .k_window       = 8,
 };
 
-/* ── Module state ───────────────────────────────────────────────── */
+/* -- Module state ------------------------------------------------- */
 static ft_config_t       s_cfg;
 static ft_status_t       s_status;
 static SemaphoreHandle_t s_mutex = NULL;
@@ -58,7 +58,7 @@ static SemaphoreHandle_t s_mutex = NULL;
 static uint8_t  s_win[WIN_MAX];  /* 1 = mismatch, 0 = agreement */
 static int      s_win_head = 0;
 
-/* ── Helpers ────────────────────────────────────────────────────── */
+/* -- Helpers ------------------------------------------------------ */
 
 static uint32_t now_ms(void)
 {
@@ -100,7 +100,7 @@ static uint32_t window_push(uint8_t mismatch)
 static void set_state(ft_state_t new_state, const char *reason)
 {
     if (s_status.state != new_state) {
-        ESP_LOGI(TAG, "[FT] %s → %s  (%s)",
+        ESP_LOGI(TAG, "[FT] %s -> %s  (%s)",
                  ft_state_name(s_status.state), ft_state_name(new_state), reason);
         s_status.state         = new_state;
         s_status.state_since_ms = now_ms();
@@ -109,7 +109,7 @@ static void set_state(ft_state_t new_state, const char *reason)
     s_status.activation_allowed = (new_state == FT_ACTIVE);
 }
 
-/* ── Public API ─────────────────────────────────────────────────── */
+/* -- Public API --------------------------------------------------- */
 
 void ft_init(const ft_config_t *cfg)
 {
@@ -129,7 +129,7 @@ void ft_update(bool radar_present, bool radar_stale,
                bool camera_present, bool camera_stale,
                bool watchdog_ok)
 {
-    /* ── Compute health scores ──────────────────────────────────── */
+    /* -- Compute health scores ------------------------------------ */
     float r_fresh = freshness_score(radar_stale  ? s_cfg.stale_ms : 0, s_cfg.stale_ms);
     float c_fresh = freshness_score(camera_stale ? s_cfg.stale_ms : 0, s_cfg.stale_ms);
     float r_trans = (watchdog_ok && !radar_stale)  ? 1.0f : 0.0f;
@@ -166,13 +166,13 @@ void ft_update(bool radar_present, bool radar_stale,
     ft_state_t cur = s_status.state;
     uint32_t   t   = now_ms();
 
-    /* ── Degraded check (overrides everything) ──────────────────── */
+    /* -- Degraded check (overrides everything) -------------------- */
     if (radar_stale && camera_stale) {
         set_state(FT_DEGRADED, "both sensors stale/faulted");
         goto done;
     }
 
-    /* ── State machine ──────────────────────────────────────────── */
+    /* -- State machine -------------------------------------------- */
     switch (cur) {
 
     case FT_IDLE:
@@ -205,7 +205,7 @@ void ft_update(bool radar_present, bool radar_stale,
     case FT_ACTIVE:
         /* Stay active unless a fault develops */
         if (!radar_present && !camera_present)
-            set_state(FT_IDLE, "session ended – no presence");
+            set_state(FT_IDLE, "session ended - no presence");
         else if (!agree || fused < s_cfg.min_confidence)
             set_state(FT_SOFT_SAFE, "health degraded during active");
         break;
@@ -222,7 +222,7 @@ void ft_update(bool radar_present, bool radar_stale,
         }
         /* Check if both sensors recovered */
         if (agree && fused >= s_cfg.min_confidence)
-            set_state(FT_VISUAL_CONFIRM, "sensors recovered – revalidate");
+            set_state(FT_VISUAL_CONFIRM, "sensors recovered - revalidate");
         break;
 
     case FT_HARD_SAFE:

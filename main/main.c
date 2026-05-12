@@ -1,5 +1,5 @@
 /*
- * main.c — MIRA 2.0 (CPRE 5450 Fault-Tolerant Edition)
+ * main.c -- MIRA 2.0 (CPRE 5450 Fault-Tolerant Edition)
  * Source: https://github.com/Shi6aSK/MIRA-2.0
  */
 #include "freertos/FreeRTOS.h"
@@ -23,7 +23,7 @@
 #include "training.h"
 #include "mic_capture.h"
 
-/* ── CPRE 5450 additions ──────────────────────────────────────── */
+/* -- CPRE 5450 additions ---------------------------------------- */
 #include "mmwave_sensor.h"
 #include "ft_activation.h"
 
@@ -32,15 +32,15 @@ static const char *TAG = "app";
 static uint8_t *s_frame_copy  = NULL;
 static int      s_null_streak = 0;
 
-/* ── Gesture auto-trigger state ────────────────────────────────── */
+/* -- Gesture auto-trigger state ---------------------------------- */
 static char     s_prev_gesture[16]    = "none";
 static int      s_gesture_count       = 0;
 static uint32_t s_last_trigger_ms     = 0;
 
-/* ── FT diagnosis task ─────────────────────────────────────────
+/* -- FT diagnosis task -----------------------------------------
  * Runs on Core 0 at medium priority.  Gathers mmWave + camera
  * health observations and drives the FT state machine.
- * ─────────────────────────────────────────────────────────────── */
+ * --------------------------------------------------------------- */
 static void ft_task(void *arg)
 {
     esp_task_wdt_add(NULL);
@@ -85,9 +85,9 @@ static void vision_task(void *arg)
     for (;;) {
         camera_fb_t *fb = camera_capture();
         if (!fb) {
-            /* Camera timed out – restart DMA if it happens repeatedly */
-            if (++s_null_streak >= 3) {  /* reinit after 3×4 s DMA timeouts = 12 s */
-                ESP_LOGW(TAG, "Camera stalled – reinitialising");
+            /* Camera timed out - restart DMA if it happens repeatedly */
+            if (++s_null_streak >= 3) {  /* reinit after 3?4 s DMA timeouts = 12 s */
+                ESP_LOGW(TAG, "Camera stalled - reinitialising");
                 esp_camera_deinit();
                 vTaskDelay(pdMS_TO_TICKS(200));
                 camera_init();
@@ -98,7 +98,7 @@ static void vision_task(void *arg)
         }
         s_null_streak = 0;
         if (fb && s_frame_copy) {
-            // Skip truncated frames – FB-SIZE mismatch crashes fmt2jpg
+            // Skip truncated frames - FB-SIZE mismatch crashes fmt2jpg
             if (fb->len != (size_t)(FRAME_WIDTH * FRAME_HEIGHT * 2)) {
                 camera_return(fb);
                 vTaskDelay(pdMS_TO_TICKS(10));
@@ -118,7 +118,7 @@ static void vision_task(void *arg)
             size_t len = fb->len;
             int w = (int)fb->width, h = (int)fb->height;
             memcpy(s_frame_copy, fb->buf, len);
-            camera_return(fb);          // return ASAP – frees the DMA buffer
+            camera_return(fb);          // return ASAP - frees the DMA buffer
 
             // Encode JPEG from PSRAM copy and push to HTTP shared buffer.
             // This happens before inference so /frame is always fresh.
@@ -131,7 +131,7 @@ static void vision_task(void *arg)
                 }
             }
 
-            /* ── FT gate ─────────────────────────────────────── */
+            /* -- FT gate --------------------------------------- */
             if (!ft_activation_allowed()) {
                 ESP_LOGV(TAG, "FT gate: inference suppressed (%s)",
                          ft_state_name(ft_get_status().state));
@@ -154,8 +154,8 @@ static void vision_task(void *arg)
             training_maybe_capture_face(&fake, &det);
             training_maybe_capture_gesture(&det);
 
-            /* ── Gesture auto-trigger ──────────────────────────── */
-            /* Only fire when KNN templates exist – prevents false positives
+            /* -- Gesture auto-trigger ---------------------------- */
+            /* Only fire when KNN templates exist - prevents false positives
              * from the skin-blob detector before any gesture training. */
             if (gesture_knn_count() > 0) {
                 if (strcmp(det.gesture, s_prev_gesture) == 0) {
@@ -169,11 +169,11 @@ static void vision_task(void *arg)
                     (now_ms - s_last_trigger_ms) >= GESTURE_COOLDOWN_MS) {
 
                     if (strcmp(det.gesture, "point") == 0) {
-                        ESP_LOGI(TAG, "point gesture → Gemma snap");
+                        ESP_LOGI(TAG, "point gesture -> Gemma snap");
                         web_server_auto_trigger_gemma("point");
                         s_last_trigger_ms = now_ms;
                     } else if (strcmp(det.gesture, "open_palm") == 0) {
-                        ESP_LOGI(TAG, "open_palm gesture → mic record");
+                        ESP_LOGI(TAG, "open_palm gesture -> mic record");
                         mic_capture_async(MIC_DURATION_MS);
                         s_last_trigger_ms = now_ms;
                     }
@@ -183,13 +183,13 @@ static void vision_task(void *arg)
         } else if (fb) {
             camera_return(fb);
         }
-        vTaskDelay(pdMS_TO_TICKS(20));  // yield to IDLE – prevents task WDT trigger
+        vTaskDelay(pdMS_TO_TICKS(20));  // yield to IDLE - prevents task WDT trigger
     }
 }
 
 void app_main(void)
 {
-    ESP_LOGW(TAG, "MIRA 2.0 booting — CPRE 5450 FT Edition");
+    ESP_LOGW(TAG, "MIRA 2.0 booting -- CPRE 5450 FT Edition");
 
     esp_err_t ret = nvs_flash_init();
     if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
@@ -201,15 +201,15 @@ void app_main(void)
     servo_init();
     servo_set_tracking(true);
 
-    /* SD card – non-fatal if absent */
+    /* SD card - non-fatal if absent */
     sd_init();
     training_init();
     training_load_gesture_templates();
 
-    /* PDM microphone – non-fatal if absent */
+    /* PDM microphone - non-fatal if absent */
     mic_init();
 
-    /* ── CPRE 5450: mmWave sensor + FT controller ──────────────── */
+    /* -- CPRE 5450: mmWave sensor + FT controller ---------------- */
     ESP_ERROR_CHECK(mmwave_init());  /* starts mmwave_rx_task on Core 0 */
 
     ft_config_t ft_cfg = {
@@ -223,7 +223,7 @@ void app_main(void)
         .k_window       = FT_K_WINDOW,
     };
     ft_init(&ft_cfg);
-    /* ─────────────────────────────────────────────────────────── */
+    /* ----------------------------------------------------------- */
 
     /* Configure Task Watchdog (5 s, panic on trigger) */
     esp_task_wdt_config_t twdt = {
@@ -242,7 +242,7 @@ void app_main(void)
     vision_init();
 
     if (wifi_init_sta() != ESP_OK) {
-        ESP_LOGE(TAG, "WiFi failed – HTTP server unavailable");
+        ESP_LOGE(TAG, "WiFi failed - HTTP server unavailable");
     } else {
         ESP_ERROR_CHECK(web_server_start());
         ESP_LOGW(TAG, "Open http://%s/ in a browser", wifi_get_ip());
@@ -256,5 +256,5 @@ void app_main(void)
     xTaskCreatePinnedToCore(ft_task,     "ft_diag",  4096, NULL,
                             configMAX_PRIORITIES - 2, NULL, 0 /* Core 0 */);
 
-    ESP_LOGI(TAG, "MIRA 2.0 ready — https://github.com/Shi6aSK/MIRA-2.0");
+    ESP_LOGI(TAG, "MIRA 2.0 ready -- https://github.com/Shi6aSK/MIRA-2.0");
 }

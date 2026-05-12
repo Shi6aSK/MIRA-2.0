@@ -12,13 +12,13 @@
  * FreeRTOS mutex so it can be queried from the web-server task.
  *
  * States:
- *   FT_IDLE            – waiting for radar trigger
- *   FT_RADAR_CANDIDATE – radar indicates possible presence
- *   FT_VISUAL_CONFIRM  – camera confirmation requested
- *   FT_ACTIVE          – all gates passed; full activation allowed
- *   FT_SOFT_SAFE       – transient inconsistency; activation suppressed
- *   FT_HARD_SAFE       – persistent fault; activation blocked
- *   FT_DEGRADED        – both sensors degraded; minimal-power mode
+ *   FT_IDLE            - waiting for radar trigger
+ *   FT_RADAR_CANDIDATE - radar indicates possible presence
+ *   FT_VISUAL_CONFIRM  - camera confirmation requested
+ *   FT_ACTIVE          - all gates passed; full activation allowed
+ *   FT_SOFT_SAFE       - transient inconsistency; activation suppressed
+ *   FT_HARD_SAFE       - persistent fault; activation blocked
+ *   FT_DEGRADED        - both sensors degraded; minimal-power mode
  */
 
 #include <stdbool.h>
@@ -28,7 +28,7 @@
 extern "C" {
 #endif
 
-/* ── Activation states ──────────────────────────────────────────── */
+/* -- Activation states -------------------------------------------- */
 typedef enum {
     FT_IDLE            = 0,
     FT_RADAR_CANDIDATE = 1,
@@ -39,7 +39,7 @@ typedef enum {
     FT_DEGRADED        = 6,
 } ft_state_t;
 
-/* ── Per-sensor health snapshot (for logging / web UI) ─────────── */
+/* -- Per-sensor health snapshot (for logging / web UI) ----------- */
 typedef struct {
     float    confidence;      /* C_i = w_s*S + w_f*F + w_t*T   [0,1] */
     float    agreement;       /* S_i: 1.0 agree, 0.0 disagree  */
@@ -49,7 +49,7 @@ typedef struct {
     bool     faulted;
 } ft_sensor_health_t;
 
-/* ── Full controller snapshot ───────────────────────────────────── */
+/* -- Full controller snapshot ------------------------------------- */
 typedef struct {
     ft_state_t         state;
     ft_sensor_health_t radar_health;
@@ -62,21 +62,21 @@ typedef struct {
     char               fault_reason[64];   /* human-readable last fault */
 } ft_status_t;
 
-/* ── Tunable parameters (set before ft_init) ────────────────────── */
+/* -- Tunable parameters (set before ft_init) ---------------------- */
 typedef struct {
     /* Confidence weights (must sum to 1.0) */
     float  w_agreement;     /* default 0.50 */
     float  w_freshness;     /* default 0.30 */
     float  w_transport;     /* default 0.20 */
     /* Thresholds */
-    float  min_confidence;  /* below this → suppress activation; default 0.60 */
+    float  min_confidence;  /* below this -> suppress activation; default 0.60 */
     uint32_t stale_ms;      /* frame freshness deadline ms; default 300 */
     uint32_t soft_retry_ms; /* max time in soft safe before escalation ms; default 3000 */
-    uint32_t k_hard;        /* consecutive mismatches → hard safe; default 4 */
+    uint32_t k_hard;        /* consecutive mismatches -> hard safe; default 4 */
     uint32_t k_window;      /* sliding window size; default 8 */
 } ft_config_t;
 
-/* ── Public API ─────────────────────────────────────────────────── */
+/* -- Public API --------------------------------------------------- */
 
 /**
  * @brief  Initialise the fault-tolerance controller.

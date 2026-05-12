@@ -22,27 +22,27 @@
 extern "C" {
 #endif
 
-/* ── UART wiring (change in vision_config.h if needed) ─────────── */
+/* -- UART wiring (change in vision_config.h if needed) ----------- */
 #ifndef MMWAVE_UART_NUM
 #define MMWAVE_UART_NUM   1
 #endif
 #ifndef MMWAVE_TX_GPIO
-#define MMWAVE_TX_GPIO    43   /* XIAO D6 – TX1 */
+#define MMWAVE_TX_GPIO    43   /* XIAO D6 - TX1 */
 #endif
 #ifndef MMWAVE_RX_GPIO
-#define MMWAVE_RX_GPIO    44   /* XIAO D7 – RX1 */
+#define MMWAVE_RX_GPIO    44   /* XIAO D7 - RX1 */
 #endif
 #define MMWAVE_BAUD       115200
 
-/* ── Radar presence states ──────────────────────────────────────── */
+/* -- Radar presence states ---------------------------------------- */
 typedef enum {
     MMWAVE_STATE_UNKNOWN  = 0,
-    MMWAVE_STATE_NO_ONE   = 1,   /* 0x01 – no presence */
-    MMWAVE_STATE_MOTION   = 2,   /* 0x02 – moving occupant */
-    MMWAVE_STATE_STATIC   = 3,   /* 0x03 – stationary occupant */
+    MMWAVE_STATE_NO_ONE   = 1,   /* 0x01 - no presence */
+    MMWAVE_STATE_MOTION   = 2,   /* 0x02 - moving occupant */
+    MMWAVE_STATE_STATIC   = 3,   /* 0x03 - stationary occupant */
 } mmwave_state_t;
 
-/* ── Per-reading snapshot ───────────────────────────────────────── */
+/* -- Per-reading snapshot ----------------------------------------- */
 typedef struct {
     mmwave_state_t state;        /* presence state */
     uint32_t       timestamp_ms; /* esp_timer tick ms at receipt */
@@ -51,7 +51,7 @@ typedef struct {
     uint32_t       drop_count;   /* consecutive lost frames */
 } mmwave_reading_t;
 
-/* ── Public API ─────────────────────────────────────────────────── */
+/* -- Public API --------------------------------------------------- */
 
 /**
  * @brief  Initialise UART and start background RX task.

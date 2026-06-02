@@ -1,0 +1,1277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MIRA 2.0 — Fault-Tolerant Multimodal Presence Verification</title>
+  <link rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css" />
+  <style>
+    /* ============================================================
+       Reset & base
+    ============================================================ */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --navy:   #0d1b35;
+      --blue:   #1a3a6b;
+      --accent: #e07b39;
+      --acl:    #f5a05a;
+      --text:   #1c2533;
+      --muted:  #5a6a82;
+      --bg:     #f5f7fb;
+      --card:   #ffffff;
+      --border: #d8e0ef;
+      --code-bg:#1e2637;
+      --radius: 8px;
+      --shadow: 0 2px 14px rgba(13,27,53,.10);
+    }
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.7;
+      font-size: 15px;
+    }
+
+    /* ============================================================
+       Navigation
+    ============================================================ */
+    nav {
+      position: sticky; top: 0; z-index: 100;
+      background: var(--navy);
+      padding: 0 2rem;
+      display: flex; align-items: center; justify-content: space-between;
+      box-shadow: 0 2px 12px rgba(0,0,0,.35);
+    }
+    nav .brand {
+      color: #fff; font-weight: 700; font-size: 1rem;
+      padding: 0.9rem 0; white-space: nowrap;
+      text-decoration: none;
+    }
+    nav .brand span { color: var(--acl); }
+    nav ul {
+      list-style: none; display: flex; flex-wrap: wrap; gap: 0.1rem;
+      padding: 0.4rem 0;
+    }
+    nav ul li a {
+      color: rgba(255,255,255,.80); text-decoration: none;
+      font-size: 0.78rem; padding: 0.35rem 0.65rem; border-radius: 4px;
+      transition: background .15s, color .15s;
+    }
+    nav ul li a:hover { background: rgba(255,255,255,.12); color: #fff; }
+
+    /* ============================================================
+       Hero
+    ============================================================ */
+    header.hero {
+      background: linear-gradient(135deg, var(--navy) 0%, #1b3b6b 60%, #24527a 100%);
+      color: #fff;
+      padding: 4rem 2rem 3.5rem;
+      text-align: center;
+    }
+    .hero-tag {
+      display: inline-block;
+      background: rgba(224,123,57,.25); border: 1px solid var(--acl);
+      color: var(--acl); font-size: 0.72rem; letter-spacing: .08em;
+      text-transform: uppercase; padding: .25rem .85rem; border-radius: 20px;
+      margin-bottom: 1.2rem;
+    }
+    header.hero h1 {
+      font-size: clamp(1.5rem, 4vw, 2.4rem); font-weight: 800;
+      line-height: 1.25; max-width: 820px; margin: 0 auto 1.1rem;
+    }
+    header.hero h1 em { color: var(--acl); font-style: normal; }
+    header.hero p.subtitle {
+      color: rgba(255,255,255,.75); font-size: 1rem; max-width: 680px;
+      margin: 0 auto 1.8rem;
+    }
+    .hero-meta {
+      display: flex; flex-wrap: wrap; gap: .7rem; justify-content: center;
+      margin-bottom: 2rem;
+    }
+    .hero-meta span {
+      background: rgba(255,255,255,.10); border: 1px solid rgba(255,255,255,.18);
+      color: rgba(255,255,255,.88); border-radius: 5px;
+      padding: .3rem .9rem; font-size: .82rem;
+    }
+    .hero-btn {
+      display: inline-flex; align-items: center; gap: .5rem;
+      background: var(--accent); color: #fff;
+      text-decoration: none; padding: .65rem 1.5rem; border-radius: 6px;
+      font-weight: 600; font-size: .9rem; transition: background .2s;
+    }
+    .hero-btn:hover { background: var(--acl); }
+
+    /* ============================================================
+       Layout
+    ============================================================ */
+    .container { max-width: 1040px; margin: 0 auto; padding: 0 1.5rem; }
+    section { padding: 3rem 0 2.5rem; }
+    section + section { border-top: 1px solid var(--border); }
+
+    h2 {
+      font-size: 1.55rem; font-weight: 700; color: var(--navy);
+      margin-bottom: 0.3rem;
+    }
+    h2::after {
+      content: ''; display: block; width: 42px; height: 3px;
+      background: var(--accent); border-radius: 2px; margin-top: .35rem;
+    }
+    h3 { font-size: 1.12rem; font-weight: 700; color: var(--blue);
+         margin: 1.6rem 0 .5rem; }
+    h4 { font-size: .95rem; font-weight: 700; color: var(--text);
+         margin: 1.2rem 0 .4rem; }
+    p { margin: .6rem 0; }
+    ul, ol { padding-left: 1.4rem; margin: .5rem 0; }
+    li { margin: .2rem 0; }
+    a { color: var(--blue); }
+
+    /* ============================================================
+       Cards & callouts
+    ============================================================ */
+    .card {
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 1.4rem 1.6rem;
+      box-shadow: var(--shadow); margin: 1.1rem 0;
+    }
+    .callout {
+      border-left: 4px solid var(--accent);
+      background: #fff8f2; padding: .9rem 1.2rem;
+      border-radius: 0 var(--radius) var(--radius) 0;
+      margin: 1rem 0;
+    }
+    .callout.info { border-color: #3182ce; background: #ebf8ff; }
+    .callout strong { color: var(--accent); }
+    .callout.info strong { color: #2b6cb0; }
+
+    /* ============================================================
+       Grids & badges
+    ============================================================ */
+    .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+    .grid3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; }
+    @media (max-width: 700px) {
+      .grid2, .grid3 { grid-template-columns: 1fr; }
+    }
+    .badge {
+      display: inline-block; padding: .15rem .55rem; border-radius: 4px;
+      font-size: .72rem; font-weight: 700; text-transform: uppercase;
+      letter-spacing: .04em;
+    }
+    .badge-green { background: #c6f6d5; color: #22543d; }
+    .badge-red   { background: #fed7d7; color: #742a2a; }
+    .badge-yellow{ background: #fefcbf; color: #744210; }
+    .badge-blue  { background: #bee3f8; color: #2a4365; }
+
+    /* ============================================================
+       Tables
+    ============================================================ */
+    .table-wrap { overflow-x: auto; margin: 1rem 0; }
+    table { width: 100%; border-collapse: collapse; font-size: .88rem; }
+    thead tr { background: var(--navy); color: #fff; }
+    thead th { padding: .6rem .9rem; text-align: left; font-weight: 600; }
+    tbody tr:nth-child(even) { background: #f0f4fb; }
+    tbody td { padding: .55rem .9rem; border-bottom: 1px solid var(--border); }
+    tbody tr:hover { background: #e8edf8; }
+
+    /* ============================================================
+       Code
+    ============================================================ */
+    pre {
+      background: var(--code-bg); border-radius: var(--radius);
+      padding: 1.1rem 1.3rem; overflow-x: auto; margin: .8rem 0;
+      font-size: .82rem; line-height: 1.55;
+    }
+    code:not(pre code) {
+      background: #edf2f7; color: #c7254e;
+      padding: .1em .35em; border-radius: 3px; font-size: .87em;
+    }
+
+    /* ============================================================
+       Mermaid diagrams
+    ============================================================ */
+    .diagram-wrap {
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 1.2rem;
+      box-shadow: var(--shadow); margin: 1.2rem 0;
+      overflow-x: auto;
+    }
+    .diagram-label {
+      font-size: .75rem; color: var(--muted); font-weight: 600;
+      text-transform: uppercase; letter-spacing: .06em;
+      margin-bottom: .8rem;
+    }
+
+    /* ============================================================
+       Section-number badges for TOC-style headers
+    ============================================================ */
+    .sec-num {
+      display: inline-block; background: var(--accent); color: #fff;
+      font-size: .7rem; font-weight: 700; padding: .1rem .5rem;
+      border-radius: 3px; margin-right: .5rem; vertical-align: middle;
+    }
+
+    /* ============================================================
+       Activation state boxes (FSM visual summary)
+    ============================================================ */
+    .states-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: .8rem; margin: 1rem 0;
+    }
+    .state-box {
+      border-radius: var(--radius); padding: .9rem 1rem;
+      font-size: .83rem;
+    }
+    .state-box .state-name {
+      font-weight: 700; font-size: .9rem; margin-bottom: .3rem;
+    }
+    .state-normal  { background: #c6f6d5; border: 1px solid #38a169; color: #22543d; }
+    .state-soft    { background: #fefcbf; border: 1px solid #d69e2e; color: #744210; }
+    .state-hard    { background: #fed7d7; border: 1px solid #c53030; color: #742a2a; }
+    .state-degraded{ background: #e9d8fd; border: 1px solid #6b46c1; color: #44337a; }
+    .state-idle    { background: #ebf8ff; border: 1px solid #3182ce; color: #2a4365; }
+
+    /* ============================================================
+       Footer
+    ============================================================ */
+    footer {
+      background: var(--navy); color: rgba(255,255,255,.65);
+      text-align: center; padding: 2rem 1rem;
+      font-size: .82rem; margin-top: 3rem;
+    }
+    footer a { color: var(--acl); }
+  </style>
+</head>
+<body>
+
+<!-- ============================================================
+     NAVIGATION
+============================================================ -->
+<nav>
+  <a class="brand" href="#top">MIRA <span>2.0</span></a>
+  <ul>
+    <li><a href="#motivation">Motivation</a></li>
+    <li><a href="#problem">Failures</a></li>
+    <li><a href="#hardware">Hardware</a></li>
+    <li><a href="#architecture">Architecture</a></li>
+    <li><a href="#fault-model">Fault Model</a></li>
+    <li><a href="#safe-state">Safe States</a></li>
+    <li><a href="#evaluation">Evaluation</a></li>
+    <li><a href="#comparison">Comparison</a></li>
+    <li><a href="#code">Code</a></li>
+    <li><a href="#references">References</a></li>
+  </ul>
+</nav>
+
+<!-- ============================================================
+     HERO
+============================================================ -->
+<header class="hero" id="top">
+  <div class="hero-tag">CPRE 5450 &mdash; Dependable Computing Systems</div>
+  <h1>Fault-Tolerant Multimodal<br /><em>Presence Verification</em> on ESP32-S3</h1>
+  <p class="subtitle">
+    Using mmWave radar and on-device vision to build a health-aware activation
+    controller that is safe under sensor faults, timing faults, and environmental uncertainty.
+  </p>
+  <div class="hero-meta">
+    <span>&#128203; Shobhit Singh</span>
+    <span>&#127979; Iowa State University &mdash; Spring 2026</span>
+    <span>&#9881;&#65039; ESP32-S3 &bull; FreeRTOS &bull; ESP-IDF v5</span>
+    <span>&#128225; 24 GHz FMCW mmWave + OV2640</span>
+  </div>
+  <a class="hero-btn" href="https://github.com/Shi6aSK/MIRA-2.0" target="_blank" rel="noopener">
+    &#128279; View on GitHub
+  </a>
+</header>
+
+<!-- ============================================================
+     MOTIVATION
+============================================================ -->
+<section id="motivation">
+  <div class="container">
+    <h2><span class="sec-num">1</span>Motivation</h2>
+    <p>
+      Room-scale assistive systems must decide <em>when</em> to wake up, <em>when</em> to sense,
+      and <em>when</em> to interact. This is especially critical in privacy-preserving systems
+      for blind or visually impaired (BVI) users: unnecessary camera or audio activation can
+      expose private data, while missed activation can deny assistance at a critical moment.
+    </p>
+    <div class="callout info">
+      <strong>Scope.</strong> This CPRE&nbsp;5450 project isolates one
+      dependability-critical subsystem from the larger CPRE&nbsp;5750 MIRA platform —
+      the activation and presence-verification layer. The central question is:<br /><br />
+      <em>"When is the system allowed to activate high-power or privacy-sensitive functions
+      such as camera inference, audio capture, or servo actuation?"</em>
+    </div>
+
+    <div class="diagram-wrap">
+      <div class="diagram-label">Figure 1 — Project Scope: What CPRE 5450 Addresses</div>
+      <pre class="mermaid">
+flowchart TD
+    A["Broader CPRE 5750 Project\nPrivacy-Preserving Multimodal Assistant"] --> B["Full System Components"]
+    B --> B1["ESP32-S3 Sense\ncamera + microphone"]
+    B --> B2["24 GHz mmWave\npresence sensing"]
+    B --> B3["Pan-tilt servos\nuser tracking"]
+    B --> B4["Gesture recognition\nopen palm / closed fist"]
+    B --> B5["Android offload\nspeech + object recognition"]
+    A --> C["CPRE 5450 Focus\nFault-Tolerant Activation Subsystem"]
+    C --> C1["Presence verification"]
+    C --> C2["Camera activation decision"]
+    C --> C3["Cross-sensor consistency checking"]
+    C --> C4["Safe-state policy"]
+    C --> C5["Fault injection evaluation"]
+    C1 --> D["Question Studied:\nWhen is the assistant allowed to wake up, sense, and interact?"]
+    classDef main fill:#e8f2ff,stroke:#2b6cb0,stroke-width:2px,color:#111;
+    classDef focus fill:#fff4e6,stroke:#c05621,stroke-width:2px,color:#111;
+    classDef item fill:#f7fafc,stroke:#718096,color:#111;
+    class A,C,D main;
+    class B,B1,B2,B3,B4,B5,C1,C2,C3,C4,C5 item;
+      </pre>
+    </div>
+
+    <div class="callout">
+      <strong>This is not only a sensor-fusion problem.</strong> It is a
+      <em>fault-tolerant decision problem.</em> The subsystem must remain reliable under
+      sensor faults, timing faults, and environmental uncertainty.
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     PROBLEM STATEMENT
+============================================================ -->
+<section id="problem">
+  <div class="container">
+    <h2><span class="sec-num">2</span>Problem Statement &amp; Failure Modes</h2>
+    <p>
+      A single-modality activation scheme is brittle — each sensor has different failure
+      conditions. The two major system-level failure modes are:
+    </p>
+    <div class="grid2">
+      <div class="card">
+        <span class="badge badge-red">False Activation</span>
+        <h4>Camera / radar disagrees → system activates anyway</h4>
+        <p>The system activates camera, audio, or actuation even though no valid user is
+        present. Wastes battery and may compromise privacy.</p>
+      </div>
+      <div class="card">
+        <span class="badge badge-yellow">Missed Activation</span>
+        <h4>System fails to activate when needed</h4>
+        <p>The system fails to activate even though the user is present and needs
+        interaction — a denial-of-service failure for an assistive system.</p>
+      </div>
+    </div>
+
+    <h3>Fault–Error–Failure Chain</h3>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Fault Source</th><th>Error State</th>
+            <th>System Failure</th><th>Consequence</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Low light / occlusion</td>
+            <td>Camera false negative</td>
+            <td><span class="badge badge-yellow">Missed activation</span></td>
+            <td>No assistance to user</td>
+          </tr>
+          <tr>
+            <td>Fan / curtain / reflection</td>
+            <td>Radar false positive</td>
+            <td><span class="badge badge-red">False activation</span></td>
+            <td>Battery drain + privacy risk</td>
+          </tr>
+          <tr>
+            <td>UART packet drop</td>
+            <td>Stale radar state</td>
+            <td>Wrong decision</td>
+            <td>Unsafe or unavailable behavior</td>
+          </tr>
+          <tr>
+            <td>ESP32 task delay</td>
+            <td>Old camera frame used</td>
+            <td>Silent wrong decision</td>
+            <td>Hard-to-detect reliability failure</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="diagram-wrap">
+      <div class="diagram-label">Figure 2 — Fault–Error–Failure Chain</div>
+      <pre class="mermaid">
+flowchart LR
+    F["Fault Source"] --> E["Error State"] --> Y["System-Level Failure"] --> C["Consequence"]
+    F1["Low light / occlusion"] --> E1["Camera false negative"] --> Y1["Missed activation"] --> C1["No assistance to user"]
+    F2["Fan / curtain / reflection"] --> E2["Radar false positive"] --> Y2["False activation"] --> C2["Battery drain + privacy risk"]
+    F3["UART packet drop"] --> E3["Stale radar state"] --> Y3["Wrong activation decision"] --> C3["Unsafe or unavailable behavior"]
+    F4["ESP32 task delay"] --> E4["Old camera frame used"] --> Y4["Silent incorrect decision"] --> C4["Hard-to-detect reliability failure"]
+    classDef source fill:#fff5f5,stroke:#c53030,color:#111;
+    classDef error fill:#fffaf0,stroke:#dd6b20,color:#111;
+    classDef fail fill:#fefcbf,stroke:#d69e2e,color:#111;
+    classDef cons fill:#edf2f7,stroke:#4a5568,color:#111;
+    class F,F1,F2,F3,F4 source;
+    class E,E1,E2,E3,E4 error;
+    class Y,Y1,Y2,Y3,Y4 fail;
+    class C,C1,C2,C3,C4 cons;
+      </pre>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     HARDWARE
+============================================================ -->
+<section id="hardware">
+  <div class="container">
+    <h2><span class="sec-num">3</span>Hardware Platform</h2>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Component</th><th>Part</th><th>Specification</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>MCU</td>
+            <td>Seeed XIAO ESP32-S3 Sense</td>
+            <td>Dual-core Xtensa LX7 @ 240 MHz, 512 KB SRAM, 8 MB PSRAM, 8 MB flash</td>
+          </tr>
+          <tr>
+            <td>Camera</td>
+            <td>OmniVision OV2640</td>
+            <td>DVP 8-bit, 240×240 RGB565, ~10 fps effective with inference</td>
+          </tr>
+          <tr>
+            <td>mmWave sensor</td>
+            <td>Seeed MR24HPC1 (24 GHz FMCW)</td>
+            <td>UART 115200 8N1, 0.75–6 m range, ±60°, moving + stationary detection</td>
+          </tr>
+          <tr>
+            <td>Display</td>
+            <td>SSD1306 OLED (I2C)</td>
+            <td>"Eyes" bitmap, status feedback</td>
+          </tr>
+          <tr>
+            <td>Audio</td>
+            <td>I2S MEMS microphone</td>
+            <td>Async capture, I2S DMA</td>
+          </tr>
+          <tr>
+            <td>Pan-tilt</td>
+            <td>2× servo (PWM/LEDC)</td>
+            <td>User-tracking actuation</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>mmWave Sensor Wire-Up</h3>
+    <pre><code class="language-text">ESP32-S3 GPIO43 (UART1 TX)  →  MR24HPC1 UART RX
+ESP32-S3 GPIO44 (UART1 RX)  ←  MR24HPC1 UART TX
+3.3 V                        →  MR24HPC1 VCC
+GND                          →  MR24HPC1 GND</code></pre>
+    <p style="color:var(--muted); font-size:.85rem;">Radar firmware: V 2.44.25070917 · detection range 0–3 m</p>
+
+    <div class="callout info">
+      <strong>Design constraint:</strong> The ESP32-S3 has no hardware GPU or
+      neural-network accelerator. All inference runs on the LX7 cores using INT8-quantized
+      models via Espressif's ESP-DL library. Per-frame inference takes 100–200 ms.
+      This motivates a <em>lightweight, rule-based activation controller</em> rather than
+      a heavy deep-learning pipeline.
+    </div>
+
+    <h3>Full End-to-End Data Flow</h3>
+    <div class="diagram-wrap">
+      <div class="diagram-label">Figure 3 — End-to-End System Data Flow</div>
+      <pre class="mermaid">
+flowchart TD
+    R["24 GHz mmWave Sensor"] --> P["Presence Trigger"]
+    P --> C["ESP32-S3 Camera Capture"]
+    C --> V["Vision Processing\nface/body/hand detection"]
+    V --> T["Tracking Logic\nKalman filter"]
+    T --> S["Servo Control\npan-tilt camera alignment"]
+    V --> G["Gesture Recognition"]
+    G --> A1["Open Palm:\nactivate microphone"]
+    G --> A2["Closed Fist:\nstop recording"]
+    G --> A3["Pointing:\ncapture object image"]
+    A1 --> M["I2S Microphone Capture"]
+    M --> D["Android Device\nspeech-to-text + AI response"]
+    A3 --> D
+    D --> U["User Feedback\naudio / response / action"]
+    FT["CPRE 5450 Fault-Tolerance Layer"] -. monitors .-> P
+    FT -. validates .-> C
+    FT -. gates .-> G
+    FT -. blocks/allows .-> M
+    classDef sensor fill:#e6fffa,stroke:#319795,color:#111;
+    classDef compute fill:#ebf8ff,stroke:#3182ce,color:#111;
+    classDef action fill:#faf5ff,stroke:#805ad5,color:#111;
+    classDef ft fill:#fff5f5,stroke:#e53e3e,stroke-width:2px,color:#111;
+    class R,C,M sensor;
+    class P,V,T,G,D compute;
+    class S,A1,A2,A3,U action;
+    class FT ft;
+      </pre>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     ARCHITECTURE
+============================================================ -->
+<section id="architecture">
+  <div class="container">
+    <h2><span class="sec-num">4</span>Proposed Fault-Tolerant Architecture</h2>
+
+    <div class="callout">
+      <strong>Guiding principle:</strong> When uncertain, fail into <em>non-activation</em>,
+      not unsafe activation. Ambiguity triggers a safe state, not an active state.
+    </div>
+
+    <p>
+      The proposed architecture treats activation as a <strong>fault-tolerant state
+      machine</strong>. The mmWave sensor acts as a low-power sentinel. When radar indicates
+      possible presence, the camera is activated briefly for confirmation. A fusion layer
+      evaluates agreement, confidence, freshness, and timing health before allowing full
+      activation.
+    </p>
+
+    <div class="diagram-wrap">
+      <div class="diagram-label">Figure 4 — Fault-Tolerant Architecture</div>
+      <pre class="mermaid">
+flowchart TD
+    subgraph Inputs["Heterogeneous Sensor Inputs"]
+        R1["mmWave UART Stream\npresence, distance gate, energy"]
+        C1["Camera Frames\nvisual confirmation"]
+    end
+    subgraph Precheck["Input Integrity and Freshness Checks"]
+        R2["Radar Parser\nframe header/footer, timestamp"]
+        C2["Frame Quality Monitor\nbrightness, blur, timestamp"]
+    end
+    subgraph Diagnosis["Fault Diagnosis Layer"]
+        D1["Cross-Sensor Consistency"]
+        D2["Temporal Redundancy\nk-sample revalidation"]
+        D3["Confidence and Health Score"]
+        D4["Fault Classifier\ntransient vs persistent"]
+    end
+    subgraph Policy["Safe Activation Policy"]
+        S0["Normal Activation"]
+        S1["Soft Safe State\nretry and suppress activation"]
+        S2["Hard Safe State\nblock activation + isolate input"]
+        S3["Degraded Mode\nlimited low-power sensing"]
+    end
+    subgraph Outputs["Controlled Outputs"]
+        O1["Allow camera inference"]
+        O2["Allow audio capture"]
+        O3["Allow servo movement"]
+        O4["Notify user if persistent fault"]
+    end
+    R1 --> R2 --> D1
+    C1 --> C2 --> D1
+    R2 --> D3
+    C2 --> D3
+    D1 --> D2 --> D4
+    D3 --> D4
+    D4 --> S0
+    D4 --> S1
+    D4 --> S2
+    D4 --> S3
+    S0 --> O1
+    S0 --> O2
+    S0 --> O3
+    S2 --> O4
+    S3 --> O4
+    classDef input fill:#e6fffa,stroke:#319795,color:#111;
+    classDef diag fill:#fffaf0,stroke:#dd6b20,color:#111;
+    classDef safe fill:#fefcbf,stroke:#d69e2e,color:#111;
+    classDef out fill:#edf2f7,stroke:#4a5568,color:#111;
+    class R1,C1,R2,C2 input;
+    class D1,D2,D3,D4 diag;
+    class S0,S1,S2,S3 safe;
+    class O1,O2,O3,O4 out;
+      </pre>
+    </div>
+
+    <h3>FreeRTOS Task Model</h3>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Task</th><th>Core</th><th>Priority</th><th>Function</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>mmwave_rx_task</code></td><td>Core 0</td><td>High</td>
+            <td>UART receive, CRC parser, freshness stamp</td>
+          </tr>
+          <tr>
+            <td><code>vision_task</code></td><td>Core 1</td><td>High</td>
+            <td>Frame capture, format, quality check, inference</td>
+          </tr>
+          <tr>
+            <td><code>ft_task</code></td><td>Core 0</td><td>MAX-2</td>
+            <td>Consistency check, scoring, FSM transitions</td>
+          </tr>
+          <tr>
+            <td><code>web_server_task</code></td><td>Core 1</td><td>Low</td>
+            <td>HTTP dashboard, JPEG stream</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <p>
+      The <strong>Task Watchdog Timer (TWDT)</strong> monitors <code>ft_task</code> for
+      stalls. A stalled task that does not call <code>esp_task_wdt_reset()</code> within
+      the 5-second watchdog period triggers a panic and is logged as a timing fault.
+    </p>
+
+    <h3>Confidence Score Fusion</h3>
+    <p>Per-sensor confidence is computed each decision window:</p>
+    <div class="card">
+      <code>C<sub>i</sub> = w<sub>s</sub> · S<sub>i</sub> + w<sub>f</sub> · F<sub>i</sub> + w<sub>t</sub> · T<sub>i</sub></code>
+      <br /><br />
+      <ul>
+        <li><strong>S<sub>i</sub></strong> — cross-sensor agreement (1.0 if agree, 0.0 if disagree)</li>
+        <li><strong>F<sub>i</sub></strong> — freshness: <code>max(0, 1 − (t<sub>now</sub> − t<sub>sample</sub>) / T<sub>stale</sub>)</code></li>
+        <li><strong>T<sub>i</sub></strong> — transport health (1.0 if TWDT not triggered &amp; no queue overflow)</li>
+      </ul>
+      <br />
+      <p>Default weights: <code>w_agreement = 0.50 · w_freshness = 0.30 · w_transport = 0.20</code></p>
+      <p>If <code>C &lt; min_confidence</code> (default 0.60), activation is suppressed regardless of binary presence decision.</p>
+    </div>
+
+    <h3>Runtime Sequence: Normal vs. Fault Handling</h3>
+    <div class="diagram-wrap">
+      <div class="diagram-label">Figure 5 — Runtime Sequence Diagram</div>
+      <pre class="mermaid">
+sequenceDiagram
+    autonumber
+    participant User
+    participant Radar as mmWave Sensor
+    participant ESP as ESP32-S3 Controller
+    participant Cam as Camera Task
+    participant Fuse as Diagnosis/Fusion Layer
+    participant Act as Activation Outputs
+    User->>Radar: Enters room or remains present
+    Radar->>ESP: UART presence report + timestamp
+    ESP->>Fuse: Radar state = present
+    Fuse->>Cam: Request short visual confirmation
+    Cam->>Fuse: Camera result + confidence + timestamp
+    alt Radar and camera agree
+        Fuse->>Act: Allow activation
+        Act->>User: Interaction enabled
+    else Temporary mismatch
+        Fuse->>Act: Suppress activation
+        Fuse->>ESP: Enter soft safe state
+        ESP->>Radar: Request next sample window
+        ESP->>Cam: Request another frame
+    else Persistent mismatch
+        Fuse->>Act: Block activation
+        Fuse->>ESP: Enter hard safe state
+        Act->>User: Notify uncertainty or fault
+    end
+      </pre>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     FAULT MODEL
+============================================================ -->
+<section id="fault-model">
+  <div class="container">
+    <h2><span class="sec-num">5</span>Fault Model &amp; Diagnosis Logic</h2>
+
+    <h3>Fault Taxonomy</h3>
+    <p>Faults are classified following Avizienis et al. (2004) along four axes:</p>
+
+    <div class="grid2">
+      <div class="card">
+        <h4>By Source</h4>
+        <ul>
+          <li><strong>Sensing faults</strong> — radar clutter, camera low-light, multipath</li>
+          <li><strong>Communication faults</strong> — UART drops, PSRAM bus contention, DMA overrun</li>
+          <li><strong>Timing faults</strong> — stale frames, over-long inference, watchdog events</li>
+          <li><strong>Environmental faults</strong> — fan, curtain, reflective surface, sudden light change</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h4>By Duration</h4>
+        <ul>
+          <li><strong>Transient</strong> — last one or a few decision windows; may self-resolve.
+            <em>E.g., brief radar glitch from a passing vehicle.</em></li>
+          <li><strong>Persistent</strong> — persist across <code>k_hard</code> consecutive windows.
+            <em>E.g., camera initialization failure.</em></li>
+          <li><strong>SDC-like (Silent Data Corruption)</strong> — sensor outputs appear valid
+            but conflict with system state.</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="diagram-wrap">
+      <div class="diagram-label">Figure 6 — Fault Taxonomy for the Activation Subsystem</div>
+      <pre class="mermaid">
+flowchart TD
+    F["Faults in Activation Subsystem"]
+    F --> S["Sensor Faults"]
+    S --> S1["Camera false negative\nlow light, blur, occlusion"]
+    S --> S2["Camera false positive\nbackground mistaken as user"]
+    S --> S3["Radar false positive\nfan, curtain, reflections"]
+    S --> S4["Radar false negative\nrange-gate or orientation issue"]
+    F --> T["Transport and Data Faults"]
+    T --> T1["UART packet drop"]
+    T --> T2["Radar framing error"]
+    T --> T3["Stale timestamp"]
+    T --> T4["Queue overflow"]
+    F --> C["Computation and Timing Faults"]
+    C --> C1["Camera task deadline miss"]
+    C --> C2["Fusion task delay"]
+    C --> C3["Watchdog event"]
+    C --> C4["Memory pressure / frame loss"]
+    F --> E["Environment / OOD Faults"]
+    E --> E1["Low light"]
+    E --> E2["Reflective surfaces"]
+    E --> E3["Moving clutter"]
+    E --> E4["Unexpected human posture"]
+    F --> P["Policy-Level Failures"]
+    P --> P1["False activation"]
+    P --> P2["Missed activation"]
+    P --> P3["Unsafe privacy-sensitive sensing"]
+    classDef root fill:#e8f2ff,stroke:#2b6cb0,stroke-width:2px,color:#111;
+    classDef category fill:#fffaf0,stroke:#dd6b20,stroke-width:2px,color:#111;
+    classDef leaf fill:#f7fafc,stroke:#718096,color:#111;
+    class F root;
+    class S,T,C,E,P category;
+    class S1,S2,S3,S4,T1,T2,T3,T4,C1,C2,C3,C4,E1,E2,E3,E4,P1,P2,P3 leaf;
+      </pre>
+    </div>
+
+    <h3>Fault Detection Rules</h3>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Fault Class</th><th>Example</th>
+            <th>Observable Symptom</th><th>Response</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Camera false negative</td>
+            <td>Low light / occlusion</td>
+            <td>Radar present; camera absent</td>
+            <td>Revalidate; soft safe state</td>
+          </tr>
+          <tr>
+            <td>Radar false positive</td>
+            <td>Fan / curtain / reflection</td>
+            <td>Radar present; camera no user</td>
+            <td>Delay activation; request confirmation</td>
+          </tr>
+          <tr>
+            <td>UART / transport fault</td>
+            <td>Dropped radar packet</td>
+            <td>Missing/stale radar timestamp</td>
+            <td>Parser reset; suppress activation</td>
+          </tr>
+          <tr>
+            <td>Timing fault</td>
+            <td>Camera task delay</td>
+            <td>Fusion uses stale frame</td>
+            <td>Reject frame; watchdog recovery</td>
+          </tr>
+          <tr>
+            <td>Persistent sensor fault</td>
+            <td>Camera init failure</td>
+            <td>Repeated visual failure</td>
+            <td>Hard safe state; isolate camera</td>
+          </tr>
+          <tr>
+            <td>SDC-like output</td>
+            <td>Stale plausible data</td>
+            <td>Valid-looking data conflicts with state</td>
+            <td>Invariant check; rollback health state</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Diagnosis Decision Flow (Per Decision Window)</h3>
+    <div class="diagram-wrap">
+      <div class="diagram-label">Figure 7 — Per-Window Diagnosis Decision Logic</div>
+      <pre class="mermaid">
+flowchart TD
+    A["New Decision Window"] --> B{Radar data fresh and valid?}
+    B -- No --> B1["Reject radar sample\nsoft safe or parser reset"]
+    B -- Yes --> C{Camera frame fresh and valid?}
+    C -- No --> C1["Reject camera sample\nsoft safe and retry"]
+    C -- Yes --> D{Radar says presence?}
+    D -- No --> E{Camera confirms user?}
+    E -- No --> N["No activation\nidle low-power state"]
+    E -- Yes --> F1["Disagreement:\npossible radar false negative"]
+    D -- Yes --> F{Camera confirms user?}
+    F -- Yes --> G["Agreement:\nallow activation"]
+    F -- No --> F2["Disagreement:\npossible radar false positive or camera false negative"]
+    F1 --> H{Mismatch count >= threshold?}
+    F2 --> H
+    B1 --> H
+    C1 --> H
+    H -- No --> S1["Soft safe state\nbounded revalidation"]
+    H -- Yes --> S2["Hard safe state\nblock activation + isolate low-confidence input"]
+    classDef decision fill:#ebf8ff,stroke:#3182ce,color:#111;
+    classDef normal fill:#f0fff4,stroke:#38a169,color:#111;
+    classDef warn fill:#fffaf0,stroke:#dd6b20,color:#111;
+    classDef safe fill:#fff5f5,stroke:#e53e3e,color:#111;
+    class B,C,D,E,F,H decision;
+    class G,N normal;
+    class F1,F2,B1,C1,S1 warn;
+    class S2 safe;
+      </pre>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     SAFE-STATE & RECOVERY
+============================================================ -->
+<section id="safe-state">
+  <div class="container">
+    <h2><span class="sec-num">6</span>Safe-State &amp; Recovery Policy</h2>
+
+    <h3>Seven-State Activation FSM</h3>
+    <div class="states-grid">
+      <div class="state-box state-idle">
+        <div class="state-name">IDLE</div>
+        Low-power sentinel — radar only, camera off.
+      </div>
+      <div class="state-box state-idle" style="background:#dbeafe;border-color:#3b82f6;color:#1e3a8a;">
+        <div class="state-name">RADAR_CANDIDATE</div>
+        Radar has indicated possible presence. Requesting camera.
+      </div>
+      <div class="state-box state-idle" style="background:#d1fae5;border-color:#10b981;color:#064e3b;">
+        <div class="state-name">VISUAL_CONFIRM</div>
+        Camera confirmation in progress.
+      </div>
+      <div class="state-box state-normal">
+        <div class="state-name">ACTIVE</div>
+        Camera inference, audio capture, and servo actuation allowed.
+      </div>
+      <div class="state-box state-soft">
+        <div class="state-name">SOFT_SAFE</div>
+        Transient inconsistency. Full activation suppressed; retry.
+      </div>
+      <div class="state-box state-hard">
+        <div class="state-name">HARD_SAFE</div>
+        Persistent fault. Activation blocked; notify user.
+      </div>
+      <div class="state-box state-degraded">
+        <div class="state-name">DEGRADED</div>
+        One sensor isolated. Minimal low-power operation.
+      </div>
+    </div>
+
+    <div class="diagram-wrap" style="margin-top:1.5rem;">
+      <div class="diagram-label">Figure 8 — Activation State Machine</div>
+      <pre class="mermaid">
+stateDiagram-v2
+    [*] --> Idle
+    Idle --> RadarCandidate: radar_presence_detected
+    RadarCandidate --> VisualConfirm: request_camera_confirmation
+    VisualConfirm --> Active: radar_agrees AND camera_confirms
+    VisualConfirm --> SoftSafe: mismatch OR low_confidence OR stale_sample
+    SoftSafe --> VisualConfirm: retry_within_time_window
+    SoftSafe --> Idle: no_presence_after_retry
+    SoftSafe --> HardSafe: mismatch_count >= N OR timeout_exceeded
+    Active --> Idle: user_leaves OR session_complete
+    Active --> SoftSafe: health_monitor_fault
+    HardSafe --> Degraded: isolate_faulty_input
+    Degraded --> Idle: manual_reset OR fault_cleared
+    HardSafe --> Idle: watchdog_reset_completed
+    note right of SoftSafe
+        Temporary uncertainty
+        Suppress full activation
+        Revalidate radar + camera
+    end note
+    note right of HardSafe
+        Persistent fault
+        Block activation
+        Notify user
+        Preserve power and privacy
+    end note
+      </pre>
+    </div>
+
+    <div class="grid2" style="margin-top:1.2rem;">
+      <div class="card">
+        <span class="badge badge-yellow">Soft Safe State</span>
+        <h4>Transient Inconsistency</h4>
+        <p>Full activation suppressed. System collects another radar sample and camera
+        frame. If consistency is restored within <code>soft_retry_ms</code> (default 3000 ms),
+        transitions back to Visual Confirm. Otherwise escalates to Hard Safe.</p>
+      </div>
+      <div class="card">
+        <span class="badge badge-red">Hard Safe State</span>
+        <h4>Persistent Inconsistency</h4>
+        <p>Automatic activation blocked. Low-confidence sensor input isolated.
+        User optionally notified via OLED/audio. Minimal power operation.
+        Exit requires manual reset or watchdog-supervised sensor re-initialization.</p>
+      </div>
+    </div>
+
+    <h3>Recovery Block for Visual Confirmation</h3>
+    <p>
+      Following the classical Randell (1975) recovery block pattern, visual confirmation
+      uses a two-level fallback:
+    </p>
+    <div class="diagram-wrap">
+      <div class="diagram-label">Figure 9 — Recovery Block Model for Visual Confirmation</div>
+      <pre class="mermaid">
+flowchart TD
+    A["Radar candidate detected"] --> P["Primary visual confirmer\nface/body detector"]
+    P --> AT1{Acceptance test passed?}
+    AT1 -- Yes --> OK["Accept visual confirmation"]
+    AT1 -- No --> B["Backup confirmer\nsimpler motion or frame-difference check"]
+    B --> AT2{Acceptance test passed?}
+    AT2 -- Yes --> DEG["Degraded confirmation\nallow limited activation or retry"]
+    AT2 -- No --> FAIL["No reliable confirmation\nenter safe state"]
+    AT1 -. checks .-> C1["confidence >= threshold"]
+    AT1 -. checks .-> C2["frame fresh"]
+    AT1 -. checks .-> C3["ROI plausible"]
+    AT2 -. checks .-> C4["motion consistent with radar"]
+    classDef process fill:#ebf8ff,stroke:#3182ce,color:#111;
+    classDef decision fill:#fefcbf,stroke:#d69e2e,color:#111;
+    classDef ok fill:#f0fff4,stroke:#38a169,color:#111;
+    classDef fail fill:#fff5f5,stroke:#e53e3e,color:#111;
+    class A,P,B process;
+    class AT1,AT2 decision;
+    class OK,DEG ok;
+    class FAIL fail;
+      </pre>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     EVALUATION
+============================================================ -->
+<section id="evaluation">
+  <div class="container">
+    <h2><span class="sec-num">7</span>Evaluation Plan &amp; Metrics</h2>
+
+    <h3>Four Controllers Compared</h3>
+    <div class="grid2">
+      <div class="card">
+        <span class="badge badge-blue">Baselines</span>
+        <ol style="margin-top:.6rem;">
+          <li><strong>Radar-only</strong> — activate on any radar presence signal, no confirmation</li>
+          <li><strong>Camera-only</strong> — activate on any face-detected frame</li>
+          <li><strong>Naive AND/OR fusion</strong> — no fault diagnosis; no safe states</li>
+        </ol>
+      </div>
+      <div class="card">
+        <span class="badge badge-green">Proposed</span>
+        <p style="margin-top:.6rem;"><strong>FT fusion</strong> — confidence scoring,
+        cross-sensor diagnosis, transient/persistent classification, soft/hard safe states,
+        recovery blocks</p>
+      </div>
+    </div>
+
+    <h3>Fault Injection Tests</h3>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Fault Type</th><th>Injection Method</th><th>Target Metric</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Radar packet drops</td>
+            <td>Drop 1-in-N UART frames randomly</td>
+            <td>FAR, MDR, fault coverage</td>
+          </tr>
+          <tr>
+            <td>Radar framing error</td>
+            <td>Corrupt SOF/EOF bytes</td>
+            <td>Fault coverage, detection latency</td>
+          </tr>
+          <tr>
+            <td>Camera frame blackout</td>
+            <td>Replace frame buffer with zeros</td>
+            <td>MDR, soft safe state rate</td>
+          </tr>
+          <tr>
+            <td>Camera motion blur</td>
+            <td>Convolve with Gaussian kernel</td>
+            <td>Fault coverage</td>
+          </tr>
+          <tr>
+            <td>Induced timing delay</td>
+            <td><code>vTaskDelay</code> injection in sensor task</td>
+            <td>TWDT trigger rate</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Key Metrics</h3>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Metric</th><th>Definition</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>FAR</strong> — False Activation Rate</td>
+            <td>Activations with no valid user / total trials</td>
+          </tr>
+          <tr>
+            <td><strong>MDR</strong> — Missed Detection Rate</td>
+            <td>No activation with valid user present / total trials</td>
+          </tr>
+          <tr>
+            <td><strong>Fault Coverage</strong></td>
+            <td>Injected faults detected and correctly classified / total injected</td>
+          </tr>
+          <tr>
+            <td><strong>Detection Latency</strong></td>
+            <td>Time from fault injection to fault flag (ms)</td>
+          </tr>
+          <tr>
+            <td><strong>Activation Latency</strong></td>
+            <td>Time from user presence to first allowed activation (ms)</td>
+          </tr>
+          <tr>
+            <td><strong>Soft Safe Entry Rate</strong></td>
+            <td>Fraction of trials that enter soft safe state</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Expected Results</h3>
+    <div class="grid2">
+      <div class="card">
+        <ul>
+          <li><strong>Lower FAR</strong> than radar-only — camera provides semantic rejection of clutter.</li>
+          <li><strong>Lower MDR</strong> than strict AND fusion — transient faults enter soft safe state and retry.</li>
+        </ul>
+      </div>
+      <div class="card">
+        <ul>
+          <li><strong>Higher fault coverage</strong> than naive fusion — explicit disagreement diagnosis.</li>
+          <li><strong>Moderate latency overhead</strong> (&lt;500 ms) from soft-safe revalidation.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     COMPARATIVE ANALYSIS
+============================================================ -->
+<section id="comparison">
+  <div class="container">
+    <h2><span class="sec-num">8</span>Comparative Analysis</h2>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Capability</th>
+            <th>Radar-only</th>
+            <th>Camera-only</th>
+            <th>Naive Fusion</th>
+            <th>Proposed FT</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Heterogeneous redundancy</td>
+            <td>&#10007;</td><td>&#10007;</td><td>&#10003; (implicit)</td>
+            <td><strong>&#10003; (explicit)</strong></td>
+          </tr>
+          <tr>
+            <td>Cross-sensor diagnosis</td>
+            <td>&#10007;</td><td>&#10007;</td><td>&#10007;</td>
+            <td><strong>&#10003;</strong></td>
+          </tr>
+          <tr>
+            <td>Transient / persistent classification</td>
+            <td>&#10007;</td><td>&#10007;</td><td>&#10007;</td>
+            <td><strong>&#10003;</strong></td>
+          </tr>
+          <tr>
+            <td>Soft / hard safe states</td>
+            <td>&#10007;</td><td>&#10007;</td><td>&#10007;</td>
+            <td><strong>&#10003;</strong></td>
+          </tr>
+          <tr>
+            <td>Confidence / freshness scoring</td>
+            <td>&#10007;</td><td>&#10007;</td><td>&#10007;</td>
+            <td><strong>&#10003;</strong></td>
+          </tr>
+          <tr>
+            <td>Fault-injection evaluation</td>
+            <td>&#10007;</td><td>&#10007;</td><td>&#10007;</td>
+            <td><strong>&#10003;</strong></td>
+          </tr>
+          <tr>
+            <td>Timing fault detection (TWDT)</td>
+            <td>&#10007;</td><td>&#10007;</td><td>&#10007;</td>
+            <td><strong>&#10003;</strong></td>
+          </tr>
+          <tr>
+            <td>Recovery block for vision</td>
+            <td>&#10007;</td><td>&#10007;</td><td>&#10007;</td>
+            <td><strong>&#10003;</strong></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     CODE / BUILD
+============================================================ -->
+<section id="code">
+  <div class="container">
+    <h2><span class="sec-num">9</span>Repository &amp; Build</h2>
+
+    <h3>Key Files</h3>
+    <div class="grid2">
+      <div class="card">
+        <span class="badge badge-blue">CPRE 5450 New</span>
+        <ul style="margin-top:.6rem;">
+          <li><code>main/mmwave_sensor.h/.c</code> — Seeed MR24HPC1 UART driver with CRC-8</li>
+          <li><code>main/ft_activation.h/.c</code> — 7-state fault-tolerant activation FSM</li>
+        </ul>
+      </div>
+      <div class="card">
+        <span class="badge badge-blue">Existing Platform</span>
+        <ul style="margin-top:.6rem;">
+          <li><code>main/camera_control.h/.c</code> — OV2640 init and frame capture</li>
+          <li><code>main/vision_pipeline.cpp</code> — ESP-DL INT8 face detection</li>
+          <li><code>main/web_server.h/.c</code> — HTTP dashboard (JPEG stream)</li>
+          <li><code>main/servo_control.h/.c</code> — Pan-tilt PWM (LEDC)</li>
+        </ul>
+      </div>
+    </div>
+
+    <h3>FT Activation FSM — Public API</h3>
+    <pre><code class="language-c">esp_err_t    ft_init(const ft_config_t *cfg);
+ft_state_t   ft_update(bool radar_present, bool camera_present,
+                        const mmwave_reading_t *radar, bool cam_fresh);
+ft_status_t  ft_get_status(void);
+bool         ft_activation_allowed(void);
+void         ft_reset(void);
+const char  *ft_state_name(ft_state_t s);</code></pre>
+
+    <h3>mmWave Sensor Driver — Public API</h3>
+    <pre><code class="language-c">esp_err_t   mmwave_init(void);
+void        mmwave_get_reading(mmwave_reading_t *out);
+bool        mmwave_presence_detected(void);
+bool        mmwave_is_stale(void);
+uint32_t    mmwave_drop_count(void);</code></pre>
+
+    <h3>Default ft_config_t Parameters</h3>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Parameter</th><th>Default</th><th>Description</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><code>w_agreement</code></td><td>0.50</td><td>Cross-sensor agreement weight</td></tr>
+          <tr><td><code>w_freshness</code></td><td>0.30</td><td>Data freshness weight</td></tr>
+          <tr><td><code>w_transport</code></td><td>0.20</td><td>Transport health weight</td></tr>
+          <tr><td><code>min_confidence</code></td><td>0.60</td><td>Minimum fused confidence for activation</td></tr>
+          <tr><td><code>stale_ms</code></td><td>300 ms</td><td>Frame freshness deadline</td></tr>
+          <tr><td><code>soft_retry_ms</code></td><td>3000 ms</td><td>Max time in Soft Safe before escalation</td></tr>
+          <tr><td><code>k_hard</code></td><td>4</td><td>Consecutive mismatches to trigger Hard Safe</td></tr>
+          <tr><td><code>k_window</code></td><td>8</td><td>Sliding window size for mismatch tracking</td></tr>
+          <tr><td><code>FT_TASK_INTERVAL_MS</code></td><td>100 ms</td><td>FT task update period</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Build &amp; Flash</h3>
+    <p><strong>Requirements:</strong> ESP-IDF v5.x or v6.x (tested on Windows with PowerShell)</p>
+    <pre><code class="language-powershell"># Clone
+git clone https://github.com/Shi6aSK/MIRA-2.0.git
+cd MIRA-2.0
+
+# Set up ESP-IDF environment (Windows PowerShell)
+. $env:IDF_PATH/export.ps1
+
+# Configure SSID/password in main/vision_config.h before building
+
+# Build
+idf.py build
+
+# Flash and monitor (replace COM3 with your port)
+idf.py -p COM3 flash monitor</code></pre>
+    <p>The web dashboard is served at the ESP32's IP address on port 80 after Wi-Fi connects.</p>
+  </div>
+</section>
+
+<!-- ============================================================
+     REFERENCES
+============================================================ -->
+<section id="references">
+  <div class="container">
+    <h2><span class="sec-num">10</span>References</h2>
+    <ol style="font-size:.9rem; line-height:1.9;">
+      <li>A. Avizienis, J.-C. Laprie, B. Randell, and C. Landwehr, "Basic Concepts and Taxonomy of Dependable and Secure Computing," <em>IEEE Trans. Dependable Secure Comput.</em>, vol. 1, no. 1, pp. 11–33, 2004.</li>
+      <li>S. Li and R. Hishiyama, "An Indoor People Counting and Tracking System Using mmWave Sensor and Sub-sensors," <em>IFAC-PapersOnLine</em>, 2023.</li>
+      <li>Y. Yu et al., "A Novel Multi-Source Sensor Correlation Adaptive Fusion Framework with Uncertainty Quantification for Intelligent Fault Diagnosis," <em>Reliability Engineering &amp; System Safety</em>, vol. 267, 2026.</li>
+      <li>M. Moradi and J. Denil, "Machine-Learning Assisted Model-Implemented Fault Injection," <em>CEUR Workshop Proceedings</em>, 2020.</li>
+      <li>S. M. Kahya, M. S. Yavuz, and E. Steinbach, "HOOD: Real-Time Human Presence and Out-of-Distribution Detection Using FMCW Radar," <em>IEEE Trans. Radar Systems</em>, 2025.</li>
+      <li>N. Zhang et al., "A Robust mmWave Radar Framework for Accurate People Counting and Motion Classification," <em>Sensors</em>, vol. 26, no. 4, 2026.</li>
+      <li>B. Randell, "System Structure for Software Fault Tolerance," <em>IEEE Trans. Software Eng.</em>, vol. SE-1, no. 2, pp. 220–232, 1975.</li>
+      <li>H. Kopetz, <em>Real-Time Systems: Design Principles for Distributed Embedded Applications</em>, 2nd ed. Springer, 2011.</li>
+      <li>Espressif Systems, <em>ESP32-S3 Technical Reference Manual</em>, 2023. <a href="https://www.espressif.com" target="_blank" rel="noopener">espressif.com</a></li>
+      <li>Espressif Systems, "Watchdogs," <em>ESP-IDF Programming Guide</em>, 2024. <a href="https://docs.espressif.com/projects/esp-idf/en/stable/esp32s3/api-reference/system/wdts.html" target="_blank" rel="noopener">docs.espressif.com</a></li>
+      <li>Seeed Studio, "24 GHz mmWave Sensor - MR24HPC1," 2023. <a href="https://wiki.seeedstudio.com/Seeed-Studio-MR24HPC1-mmWave-Human-Static-Presence-Module-Lite/" target="_blank" rel="noopener">wiki.seeedstudio.com</a></li>
+    </ol>
+  </div>
+</section>
+
+<!-- ============================================================
+     FOOTER
+============================================================ -->
+<footer>
+  <p>
+    MIRA 2.0 &mdash; Fault-Tolerant Multimodal Presence Verification on ESP32-S3<br />
+    CPRE 5450 Dependable Computing Systems &bull; Iowa State University, Spring 2026<br />
+    Shobhit Singh &bull;
+    <a href="https://github.com/Shi6aSK/MIRA-2.0" target="_blank" rel="noopener">github.com/Shi6aSK/MIRA-2.0</a>
+  </p>
+</footer>
+
+<!-- ============================================================
+     SCRIPTS
+============================================================ -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script type="module">
+  import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+  mermaid.initialize({
+    startOnLoad: true,
+    theme: 'neutral',
+    flowchart: { useMaxWidth: true, htmlLabels: true },
+    sequence:   { useMaxWidth: true },
+    fontSize: 13
+  });
+</script>
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    document.querySelectorAll('pre code').forEach(block => {
+      // Skip mermaid blocks (they're already handled)
+      if (!block.closest('pre.mermaid')) {
+        hljs.highlightElement(block);
+      }
+    });
+  });
+</script>
+</body>
+</html>

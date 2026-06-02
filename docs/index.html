@@ -3,253 +3,259 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>MIRA 2.0 — Fault-Tolerant Multimodal Presence Verification</title>
-  <link rel="stylesheet"
-    href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css" />
+  <title>MIRA 2.0 — Fault-Tolerant Presence Verification on ESP32-S3</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
   <style>
     /* ============================================================
        Reset & base
     ============================================================ */
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     :root {
-      --navy:   #0d1b35;
-      --blue:   #1a3a6b;
-      --accent: #e07b39;
-      --acl:    #f5a05a;
-      --text:   #1c2533;
-      --muted:  #5a6a82;
-      --bg:     #f5f7fb;
-      --card:   #ffffff;
-      --border: #d8e0ef;
-      --code-bg:#1e2637;
-      --radius: 8px;
-      --shadow: 0 2px 14px rgba(13,27,53,.10);
+      --white:   #ffffff;
+      --bg:      #f8fafc;
+      --border:  #e2e8f0;
+      --text:    #0f172a;
+      --muted:   #64748b;
+      --blue:    #2563eb;
+      --blue-lt: #eff6ff;
+      --blue-bd: #bfdbfe;
+      --red-lt:  #fef2f2;
+      --red-bd:  #fecaca;
+      --red-tx:  #991b1b;
+      --yel-lt:  #fefce8;
+      --yel-bd:  #fde68a;
+      --yel-tx:  #92400e;
+      --grn-lt:  #f0fdf4;
+      --grn-bd:  #bbf7d0;
+      --grn-tx:  #166534;
+      --code-bg: #f1f5f9;
+      --radius:  6px;
     }
     html { scroll-behavior: smooth; }
     body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
       background: var(--bg);
       color: var(--text);
       line-height: 1.7;
       font-size: 15px;
+      -webkit-font-smoothing: antialiased;
     }
 
-    /* ============================================================
-       Navigation
-    ============================================================ */
+    /* ── Nav ─────────────────────────────────────────────── */
     nav {
       position: sticky; top: 0; z-index: 100;
-      background: var(--navy);
+      background: rgba(255,255,255,0.93);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid var(--border);
       padding: 0 2rem;
-      display: flex; align-items: center; justify-content: space-between;
-      box-shadow: 0 2px 12px rgba(0,0,0,.35);
+      display: flex; align-items: center; gap: 1.5rem;
     }
-    nav .brand {
-      color: #fff; font-weight: 700; font-size: 1rem;
-      padding: 0.9rem 0; white-space: nowrap;
-      text-decoration: none;
+    .nav-brand {
+      font-weight: 700; font-size: .9rem; color: var(--text);
+      text-decoration: none; padding: .9rem 0; white-space: nowrap;
+      letter-spacing: -.01em;
     }
-    nav .brand span { color: var(--acl); }
+    .nav-brand span { color: var(--blue); }
     nav ul {
-      list-style: none; display: flex; flex-wrap: wrap; gap: 0.1rem;
-      padding: 0.4rem 0;
+      list-style: none; display: flex; flex-wrap: wrap;
+      overflow-x: auto; flex: 1;
     }
     nav ul li a {
-      color: rgba(255,255,255,.80); text-decoration: none;
-      font-size: 0.78rem; padding: 0.35rem 0.65rem; border-radius: 4px;
-      transition: background .15s, color .15s;
+      color: var(--muted); text-decoration: none;
+      font-size: .78rem; font-weight: 500;
+      padding: .85rem .6rem; display: block;
+      transition: color .15s; white-space: nowrap;
     }
-    nav ul li a:hover { background: rgba(255,255,255,.12); color: #fff; }
+    nav ul li a:hover { color: var(--text); }
+    .nav-gh {
+      margin-left: auto; flex-shrink: 0;
+      display: inline-flex; align-items: center; gap: .4rem;
+      background: var(--text); color: #fff !important;
+      text-decoration: none; padding: .35rem .85rem;
+      border-radius: var(--radius); font-size: .76rem; font-weight: 600;
+      transition: opacity .15s;
+    }
+    .nav-gh:hover { opacity: .8; }
 
-    /* ============================================================
-       Hero
-    ============================================================ */
-    header.hero {
-      background: linear-gradient(135deg, var(--navy) 0%, #1b3b6b 60%, #24527a 100%);
-      color: #fff;
-      padding: 4rem 2rem 3.5rem;
-      text-align: center;
+    /* ── Hero ─────────────────────────────────────────────── */
+    .hero {
+      background: var(--white);
+      border-bottom: 1px solid var(--border);
+      padding: 5rem 2rem 0;
     }
-    .hero-tag {
-      display: inline-block;
-      background: rgba(224,123,57,.25); border: 1px solid var(--acl);
-      color: var(--acl); font-size: 0.72rem; letter-spacing: .08em;
-      text-transform: uppercase; padding: .25rem .85rem; border-radius: 20px;
-      margin-bottom: 1.2rem;
+    .hero-inner {
+      max-width: 1080px; margin: 0 auto;
+      display: grid; grid-template-columns: 1fr 400px; gap: 4rem;
+      align-items: end;
     }
-    header.hero h1 {
-      font-size: clamp(1.5rem, 4vw, 2.4rem); font-weight: 800;
-      line-height: 1.25; max-width: 820px; margin: 0 auto 1.1rem;
+    .hero-eyebrow {
+      font-size: .7rem; font-weight: 600; letter-spacing: .1em;
+      text-transform: uppercase; color: var(--blue); margin-bottom: .9rem;
     }
-    header.hero h1 em { color: var(--acl); font-style: normal; }
-    header.hero p.subtitle {
-      color: rgba(255,255,255,.75); font-size: 1rem; max-width: 680px;
-      margin: 0 auto 1.8rem;
+    .hero h1 {
+      font-size: clamp(1.8rem, 3.5vw, 2.7rem); font-weight: 700;
+      line-height: 1.18; letter-spacing: -.03em; color: var(--text);
+      margin-bottom: 1rem;
     }
-    .hero-meta {
-      display: flex; flex-wrap: wrap; gap: .7rem; justify-content: center;
-      margin-bottom: 2rem;
+    .hero h1 em { color: var(--blue); font-style: normal; }
+    .hero-sub {
+      color: var(--muted); font-size: .97rem; max-width: 520px;
+      margin-bottom: 1.8rem; line-height: 1.65;
     }
-    .hero-meta span {
-      background: rgba(255,255,255,.10); border: 1px solid rgba(255,255,255,.18);
-      color: rgba(255,255,255,.88); border-radius: 5px;
-      padding: .3rem .9rem; font-size: .82rem;
+    .hero-chips {
+      display: flex; flex-wrap: wrap; gap: .5rem; margin-bottom: 2.5rem;
     }
-    .hero-btn {
-      display: inline-flex; align-items: center; gap: .5rem;
-      background: var(--accent); color: #fff;
-      text-decoration: none; padding: .65rem 1.5rem; border-radius: 6px;
-      font-weight: 600; font-size: .9rem; transition: background .2s;
+    .chip {
+      background: var(--bg); border: 1px solid var(--border);
+      color: var(--muted); border-radius: 20px;
+      padding: .22rem .75rem; font-size: .75rem; font-weight: 500;
     }
-    .hero-btn:hover { background: var(--acl); }
+    .hero-img-wrap {
+      align-self: end;
+      border-radius: var(--radius) var(--radius) 0 0;
+      overflow: hidden;
+      box-shadow: 0 -4px 24px rgba(15,23,42,.10), 0 0 0 1px var(--border);
+    }
+    .hero-img-wrap img {
+      display: block; width: 100%; height: 380px;
+      object-fit: cover; object-position: center top;
+    }
+    @media (max-width: 820px) {
+      .hero-inner { grid-template-columns: 1fr; }
+      .hero-img-wrap { display: none; }
+    }
 
-    /* ============================================================
-       Layout
-    ============================================================ */
-    .container { max-width: 1040px; margin: 0 auto; padding: 0 1.5rem; }
-    section { padding: 3rem 0 2.5rem; }
-    section + section { border-top: 1px solid var(--border); }
-
+    /* ── Layout ─────────────────────────────────────────────── */
+    .container { max-width: 1080px; margin: 0 auto; padding: 0 2rem; }
+    section {
+      padding: 4rem 0;
+      background: var(--white);
+      border-bottom: 1px solid var(--border);
+    }
+    section:nth-child(even) { background: var(--bg); }
+    .section-label {
+      font-size: .7rem; font-weight: 600; letter-spacing: .1em;
+      text-transform: uppercase; color: var(--blue); margin-bottom: .5rem;
+    }
     h2 {
-      font-size: 1.55rem; font-weight: 700; color: var(--navy);
-      margin-bottom: 0.3rem;
+      font-size: 1.5rem; font-weight: 700; letter-spacing: -.02em;
+      color: var(--text); margin-bottom: 1rem;
     }
-    h2::after {
-      content: ''; display: block; width: 42px; height: 3px;
-      background: var(--accent); border-radius: 2px; margin-top: .35rem;
-    }
-    h3 { font-size: 1.12rem; font-weight: 700; color: var(--blue);
-         margin: 1.6rem 0 .5rem; }
-    h4 { font-size: .95rem; font-weight: 700; color: var(--text);
-         margin: 1.2rem 0 .4rem; }
+    h3 { font-size: 1rem; font-weight: 600; color: var(--text); margin: 2rem 0 .6rem; }
+    h4 { font-size: .9rem; font-weight: 600; color: var(--text); margin-bottom: .3rem; }
     p { margin: .6rem 0; }
     ul, ol { padding-left: 1.4rem; margin: .5rem 0; }
-    li { margin: .2rem 0; }
+    li { margin: .25rem 0; }
     a { color: var(--blue); }
 
-    /* ============================================================
-       Cards & callouts
-    ============================================================ */
+    /* ── Cards & callouts ─────────────────────────────────────── */
     .card {
-      background: var(--card); border: 1px solid var(--border);
-      border-radius: var(--radius); padding: 1.4rem 1.6rem;
-      box-shadow: var(--shadow); margin: 1.1rem 0;
+      background: var(--white); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 1.25rem 1.4rem;
+      box-shadow: 0 1px 3px rgba(15,23,42,.05);
     }
     .callout {
-      border-left: 4px solid var(--accent);
-      background: #fff8f2; padding: .9rem 1.2rem;
+      border-left: 3px solid var(--blue);
+      background: var(--blue-lt); padding: .85rem 1.1rem;
       border-radius: 0 var(--radius) var(--radius) 0;
-      margin: 1rem 0;
+      margin: 1.2rem 0; font-size: .9rem;
     }
-    .callout.info { border-color: #3182ce; background: #ebf8ff; }
-    .callout strong { color: var(--accent); }
-    .callout.info strong { color: #2b6cb0; }
-
-    /* ============================================================
-       Grids & badges
-    ============================================================ */
-    .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
-    .grid3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; }
-    @media (max-width: 700px) {
+    .callout em { color: var(--blue); font-style: normal; font-weight: 500; }
+    .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin: 1rem 0; }
+    .grid3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin: 1rem 0; }
+    @media (max-width: 680px) {
       .grid2, .grid3 { grid-template-columns: 1fr; }
     }
     .badge {
-      display: inline-block; padding: .15rem .55rem; border-radius: 4px;
-      font-size: .72rem; font-weight: 700; text-transform: uppercase;
-      letter-spacing: .04em;
+      display: inline-block; padding: .15rem .6rem; border-radius: 4px;
+      font-size: .7rem; font-weight: 600; letter-spacing: .03em; text-transform: uppercase;
     }
-    .badge-green { background: #c6f6d5; color: #22543d; }
-    .badge-red   { background: #fed7d7; color: #742a2a; }
-    .badge-yellow{ background: #fefcbf; color: #744210; }
-    .badge-blue  { background: #bee3f8; color: #2a4365; }
+    .badge-green  { background: var(--grn-lt); color: var(--grn-tx); border: 1px solid var(--grn-bd); }
+    .badge-red    { background: var(--red-lt); color: var(--red-tx); border: 1px solid var(--red-bd); }
+    .badge-yellow { background: var(--yel-lt); color: var(--yel-tx); border: 1px solid var(--yel-bd); }
+    .badge-blue   { background: var(--blue-lt); color: var(--blue);  border: 1px solid var(--blue-bd); }
 
-    /* ============================================================
-       Tables
-    ============================================================ */
-    .table-wrap { overflow-x: auto; margin: 1rem 0; }
-    table { width: 100%; border-collapse: collapse; font-size: .88rem; }
-    thead tr { background: var(--navy); color: #fff; }
-    thead th { padding: .6rem .9rem; text-align: left; font-weight: 600; }
-    tbody tr:nth-child(even) { background: #f0f4fb; }
-    tbody td { padding: .55rem .9rem; border-bottom: 1px solid var(--border); }
-    tbody tr:hover { background: #e8edf8; }
+    /* ── Tables ────────────────────────────────────────────── */
+    .table-wrap { overflow-x: auto; margin: 1rem 0; border-radius: var(--radius); border: 1px solid var(--border); }
+    table { width: 100%; border-collapse: collapse; font-size: .85rem; }
+    thead tr { background: var(--bg); }
+    thead th { padding: .65rem 1rem; text-align: left; font-weight: 600; font-size: .78rem; letter-spacing: .02em; color: var(--muted); text-transform: uppercase; border-bottom: 1px solid var(--border); }
+    tbody td { padding: .6rem 1rem; border-bottom: 1px solid var(--border); vertical-align: top; }
+    tbody tr:last-child td { border-bottom: none; }
+    tbody tr:hover { background: var(--bg); }
 
-    /* ============================================================
-       Code
-    ============================================================ */
+    /* ── Code ──────────────────────────────────────────────── */
     pre {
-      background: var(--code-bg); border-radius: var(--radius);
-      padding: 1.1rem 1.3rem; overflow-x: auto; margin: .8rem 0;
-      font-size: .82rem; line-height: 1.55;
+      background: var(--code-bg); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 1.1rem 1.25rem; overflow-x: auto;
+      margin: .8rem 0; font-size: .82rem;
+      font-family: 'JetBrains Mono', 'Fira Code', monospace;
+      line-height: 1.6; color: var(--text);
     }
     code:not(pre code) {
-      background: #edf2f7; color: #c7254e;
-      padding: .1em .35em; border-radius: 3px; font-size: .87em;
+      font-family: 'JetBrains Mono', monospace;
+      background: var(--code-bg); border: 1px solid var(--border);
+      padding: .1em .4em; border-radius: 3px; font-size: .82em; color: var(--text);
     }
 
-    /* ============================================================
-       Mermaid diagrams
-    ============================================================ */
+    /* ── Diagrams ───────────────────────────────────────────── */
     .diagram-wrap {
-      background: var(--card); border: 1px solid var(--border);
-      border-radius: var(--radius); padding: 1.2rem;
-      box-shadow: var(--shadow); margin: 1.2rem 0;
-      overflow-x: auto;
+      background: var(--white); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 1.5rem;
+      margin: 1.2rem 0; overflow-x: auto;
     }
     .diagram-label {
-      font-size: .75rem; color: var(--muted); font-weight: 600;
-      text-transform: uppercase; letter-spacing: .06em;
-      margin-bottom: .8rem;
+      font-size: .72rem; font-weight: 600; color: var(--muted);
+      text-transform: uppercase; letter-spacing: .07em; margin-bottom: 1rem;
+    }
+    .sec-num { display: none; }
+
+    /* ── Images ────────────────────────────────────────────── */
+    .img-wrap {
+      border-radius: var(--radius); overflow: hidden;
+      border: 1px solid var(--border);
+      box-shadow: 0 1px 4px rgba(15,23,42,.06);
+    }
+    .img-wrap img { display: block; width: 100%; height: auto; }
+    .img-caption {
+      padding: .55rem .9rem; font-size: .75rem; color: var(--muted);
+      background: var(--bg); border-top: 1px solid var(--border);
     }
 
-    /* ============================================================
-       Section-number badges for TOC-style headers
-    ============================================================ */
-    .sec-num {
-      display: inline-block; background: var(--accent); color: #fff;
-      font-size: .7rem; font-weight: 700; padding: .1rem .5rem;
-      border-radius: 3px; margin-right: .5rem; vertical-align: middle;
-    }
-
-    /* ============================================================
-       Activation state boxes (FSM visual summary)
-    ============================================================ */
+    /* ── State boxes ────────────────────────────────────────── */
     .states-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-      gap: .8rem; margin: 1rem 0;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: .75rem; margin: 1rem 0;
     }
     .state-box {
-      border-radius: var(--radius); padding: .9rem 1rem;
-      font-size: .83rem;
+      border-radius: var(--radius); padding: .85rem 1rem;
+      font-size: .82rem; border: 1px solid transparent;
     }
-    .state-box .state-name {
-      font-weight: 700; font-size: .9rem; margin-bottom: .3rem;
-    }
-    .state-normal  { background: #c6f6d5; border: 1px solid #38a169; color: #22543d; }
-    .state-soft    { background: #fefcbf; border: 1px solid #d69e2e; color: #744210; }
-    .state-hard    { background: #fed7d7; border: 1px solid #c53030; color: #742a2a; }
-    .state-degraded{ background: #e9d8fd; border: 1px solid #6b46c1; color: #44337a; }
-    .state-idle    { background: #ebf8ff; border: 1px solid #3182ce; color: #2a4365; }
+    .state-box .state-name { font-weight: 700; font-size: .85rem; margin-bottom: .25rem; }
+    .state-normal  { background: var(--grn-lt); border-color: var(--grn-bd); color: #14532d; }
+    .state-soft    { background: var(--yel-lt); border-color: var(--yel-bd); color: var(--yel-tx); }
+    .state-hard    { background: var(--red-lt); border-color: var(--red-bd); color: var(--red-tx); }
+    .state-degraded{ background: #faf5ff; border-color: #e9d8fd; color: #44337a; }
+    .state-idle    { background: var(--blue-lt); border-color: var(--blue-bd); color: #1e3a8a; }
 
-    /* ============================================================
-       Footer
-    ============================================================ */
+    /* ── Footer ─────────────────────────────────────────────── */
     footer {
-      background: var(--navy); color: rgba(255,255,255,.65);
-      text-align: center; padding: 2rem 1rem;
-      font-size: .82rem; margin-top: 3rem;
+      background: var(--white); border-top: 1px solid var(--border);
+      text-align: center; padding: 2.5rem 1rem;
+      color: var(--muted); font-size: .82rem;
     }
-    footer a { color: var(--acl); }
+    footer a { color: var(--blue); text-decoration: none; }
+    footer a:hover { text-decoration: underline; }
   </style>
 </head>
 <body>
 
-<!-- ============================================================
-     NAVIGATION
-============================================================ -->
+<!-- nav -->
 <nav>
-  <a class="brand" href="#top">MIRA <span>2.0</span></a>
+  <a class="nav-brand" href="#top">MIRA <span>2.0</span></a>
   <ul>
     <li><a href="#motivation">Motivation</a></li>
     <li><a href="#problem">Failures</a></li>
@@ -262,45 +268,50 @@
     <li><a href="#code">Code</a></li>
     <li><a href="#references">References</a></li>
   </ul>
+  <a class="nav-gh" href="https://github.com/Shi6aSK/MIRA-2.0" target="_blank" rel="noopener">↗ GitHub</a>
 </nav>
 
-<!-- ============================================================
-     HERO
-============================================================ -->
-<header class="hero" id="top">
-  <div class="hero-tag">CPRE 5450 &mdash; Dependable Computing Systems</div>
-  <h1>Fault-Tolerant Multimodal<br /><em>Presence Verification</em> on ESP32-S3</h1>
-  <p class="subtitle">
-    Using mmWave radar and on-device vision to build a health-aware activation
-    controller that is safe under sensor faults, timing faults, and environmental uncertainty.
-  </p>
-  <div class="hero-meta">
-    <span>&#128203; Shobhit Singh</span>
-    <span>&#127979; Iowa State University &mdash; Spring 2026</span>
-    <span>&#9881;&#65039; ESP32-S3 &bull; FreeRTOS &bull; ESP-IDF v5</span>
-    <span>&#128225; 24 GHz FMCW mmWave + OV2640</span>
+<!-- hero -->
+<section class="hero" id="top" style="padding-bottom:0;border-bottom:1px solid var(--border);">
+  <div class="hero-inner">
+    <div>
+      <p class="hero-eyebrow">CPRE 5450 &middot; Fault Tolerant Systems &middot; Iowa State University, Spring 2026</p>
+      <h1>Fault-Tolerant<br /><em>Presence Verification</em><br />on ESP32-S3</h1>
+      <p class="hero-sub">
+        A health-aware activation controller using 24&nbsp;GHz mmWave radar and on-device
+        vision to decide &mdash; dependably &mdash; when a privacy-sensitive assistive system
+        is allowed to activate.
+      </p>
+      <div class="hero-chips">
+        <span class="chip">Shobhit Singh</span>
+        <span class="chip">ESP32-S3 &middot; FreeRTOS &middot; ESP-IDF v5</span>
+        <span class="chip">24 GHz FMCW mmWave + OV2640</span>
+        <span class="chip">7-state fault-tolerant FSM</span>
+        <span class="chip">Fault injection evaluation</span>
+      </div>
+    </div>
+    <div class="hero-img-wrap">
+      <img src="MIRA_withmmWaveSensor_at_bottom.jpeg"
+           alt="MIRA 2.0 robot: 3D-printed body, OLED eyes, camera, and mmWave sensor" />
+    </div>
   </div>
-  <a class="hero-btn" href="https://github.com/Shi6aSK/MIRA-2.0" target="_blank" rel="noopener">
-    &#128279; View on GitHub
-  </a>
-</header>
+</section>
 
-<!-- ============================================================
-     MOTIVATION
-============================================================ -->
+<!-- motivation -->
 <section id="motivation">
   <div class="container">
-    <h2><span class="sec-num">1</span>Motivation</h2>
+    <p class="section-label">01 &middot; Motivation</p>
+    <h2>Why activation matters</h2>
     <p>
       Room-scale assistive systems must decide <em>when</em> to wake up, <em>when</em> to sense,
       and <em>when</em> to interact. This is especially critical in privacy-preserving systems
       for blind or visually impaired (BVI) users: unnecessary camera or audio activation can
       expose private data, while missed activation can deny assistance at a critical moment.
     </p>
-    <div class="callout info">
-      <strong>Scope.</strong> This CPRE&nbsp;5450 project isolates one
-      dependability-critical subsystem from the larger CPRE&nbsp;5750 MIRA platform —
-      the activation and presence-verification layer. The central question is:<br /><br />
+    <div class="callout">
+      <strong>CPRE 5450 scope.</strong> This project isolates one dependability-critical
+      subsystem from the larger CPRE 5750 MIRA platform &mdash;
+      the activation and presence-verification layer. The central question:
       <em>"When is the system allowed to activate high-power or privacy-sensitive functions
       such as camera inference, audio capture, or servo actuation?"</em>
     </div>
@@ -331,19 +342,18 @@ flowchart TD
     </div>
 
     <div class="callout">
-      <strong>This is not only a sensor-fusion problem.</strong> It is a
-      <em>fault-tolerant decision problem.</em> The subsystem must remain reliable under
+      This is not only a sensor-fusion problem &mdash; it is a
+      <em>fault-tolerant decision problem</em>. The subsystem must remain reliable under
       sensor faults, timing faults, and environmental uncertainty.
     </div>
   </div>
 </section>
 
-<!-- ============================================================
-     PROBLEM STATEMENT
-============================================================ -->
+<!-- problem -->
 <section id="problem">
   <div class="container">
-    <h2><span class="sec-num">2</span>Problem Statement &amp; Failure Modes</h2>
+    <p class="section-label">02 &middot; Problem Statement</p>
+    <h2>Failure modes</h2>
     <p>
       A single-modality activation scheme is brittle — each sensor has different failure
       conditions. The two major system-level failure modes are:
@@ -423,12 +433,11 @@ flowchart LR
   </div>
 </section>
 
-<!-- ============================================================
-     HARDWARE
-============================================================ -->
+<!-- hardware -->
 <section id="hardware">
   <div class="container">
-    <h2><span class="sec-num">3</span>Hardware Platform</h2>
+    <p class="section-label">03 &middot; Hardware Platform</p>
+    <h2>Components &amp; constraints</h2>
 
     <div class="table-wrap">
       <table>
@@ -470,22 +479,40 @@ flowchart LR
       </table>
     </div>
 
-    <h3>mmWave Sensor Wire-Up</h3>
-    <pre><code class="language-text">ESP32-S3 GPIO43 (UART1 TX)  →  MR24HPC1 UART RX
-ESP32-S3 GPIO44 (UART1 RX)  ←  MR24HPC1 UART TX
-3.3 V                        →  MR24HPC1 VCC
-GND                          →  MR24HPC1 GND</code></pre>
-    <p style="color:var(--muted); font-size:.85rem;">Radar firmware: V 2.44.25070917 · detection range 0–3 m</p>
+    <div class="grid2" style="margin-top:1.8rem;">
+      <div>
+        <h3 style="margin-top:0;">mmWave sensor &mdash; radar configuration</h3>
+        <p style="font-size:.88rem;color:var(--muted);margin-bottom:.8rem;">Firmware V 2.44.25070917 &middot; Detection range 0&ndash;3 m</p>
+        <div class="img-wrap">
+          <img src="HLKRadar_config.jpeg" alt="mmWave sensor configuration app: firmware version, detection range 0-3m, radar parameters" />
+          <div class="img-caption">MR24HPC1 radar parameters via Seeed configuration app</div>
+        </div>
+      </div>
+      <div>
+        <h3 style="margin-top:0;">mmWave sensor &mdash; live detection</h3>
+        <p style="font-size:.88rem;color:var(--muted);margin-bottom:.8rem;">Moving target detected at 0.52 m &middot; Engineering mode with per-gate energy graphs</p>
+        <div class="img-wrap">
+          <img src="HLKRadar_Detection.jpeg" alt="mmWave live detection: moving target at 0.52m, energy value charts per distance gate" />
+          <div class="img-caption">Live FMCW presence detection &mdash; moving + stationary energy values</div>
+        </div>
+      </div>
+    </div>
 
-    <div class="callout info">
+    <h3>Wire-up</h3>
+    <pre>ESP32-S3 GPIO43 (UART1 TX)  &rarr;  MR24HPC1 UART RX
+ESP32-S3 GPIO44 (UART1 RX)  &larr;  MR24HPC1 UART TX
+3.3 V                        &rarr;  MR24HPC1 VCC
+GND                          &rarr;  MR24HPC1 GND</pre>
+
+    <div class="callout">
       <strong>Design constraint:</strong> The ESP32-S3 has no hardware GPU or
       neural-network accelerator. All inference runs on the LX7 cores using INT8-quantized
-      models via Espressif's ESP-DL library. Per-frame inference takes 100–200 ms.
-      This motivates a <em>lightweight, rule-based activation controller</em> rather than
+      models via Espressif&rsquo;s ESP-DL library. Per-frame inference takes 100&ndash;200&nbsp;ms,
+      motivating a <em>lightweight, rule-based activation controller</em> rather than
       a heavy deep-learning pipeline.
     </div>
 
-    <h3>Full End-to-End Data Flow</h3>
+    <h3>End-to-end system flow</h3>
     <div class="diagram-wrap">
       <div class="diagram-label">Figure 3 — End-to-End System Data Flow</div>
       <pre class="mermaid">
@@ -520,12 +547,11 @@ flowchart TD
   </div>
 </section>
 
-<!-- ============================================================
-     ARCHITECTURE
-============================================================ -->
+<!-- architecture -->
 <section id="architecture">
   <div class="container">
-    <h2><span class="sec-num">4</span>Proposed Fault-Tolerant Architecture</h2>
+    <p class="section-label">04 &middot; Architecture</p>
+    <h2>Proposed fault-tolerant design</h2>
 
     <div class="callout">
       <strong>Guiding principle:</strong> When uncertain, fail into <em>non-activation</em>,
@@ -678,12 +704,11 @@ sequenceDiagram
   </div>
 </section>
 
-<!-- ============================================================
-     FAULT MODEL
-============================================================ -->
+<!-- fault model -->
 <section id="fault-model">
   <div class="container">
-    <h2><span class="sec-num">5</span>Fault Model &amp; Diagnosis Logic</h2>
+    <p class="section-label">05 &middot; Fault Model</p>
+    <h2>Fault model &amp; diagnosis logic</h2>
 
     <h3>Fault Taxonomy</h3>
     <p>Faults are classified following Avizienis et al. (2004) along four axes:</p>
@@ -834,12 +859,11 @@ flowchart TD
   </div>
 </section>
 
-<!-- ============================================================
-     SAFE-STATE & RECOVERY
-============================================================ -->
+<!-- safe state -->
 <section id="safe-state">
   <div class="container">
-    <h2><span class="sec-num">6</span>Safe-State &amp; Recovery Policy</h2>
+    <p class="section-label">06 &middot; Safe-State &amp; Recovery</p>
+    <h2>Safe-state &amp; recovery policy</h2>
 
     <h3>Seven-State Activation FSM</h3>
     <div class="states-grid">
@@ -954,12 +978,11 @@ flowchart TD
   </div>
 </section>
 
-<!-- ============================================================
-     EVALUATION
-============================================================ -->
+<!-- evaluation -->
 <section id="evaluation">
   <div class="container">
-    <h2><span class="sec-num">7</span>Evaluation Plan &amp; Metrics</h2>
+    <p class="section-label">07 &middot; Evaluation</p>
+    <h2>Evaluation plan &amp; metrics</h2>
 
     <h3>Four Controllers Compared</h3>
     <div class="grid2">
@@ -1068,12 +1091,11 @@ flowchart TD
   </div>
 </section>
 
-<!-- ============================================================
-     COMPARATIVE ANALYSIS
-============================================================ -->
+<!-- comparison -->
 <section id="comparison">
   <div class="container">
-    <h2><span class="sec-num">8</span>Comparative Analysis</h2>
+    <p class="section-label">08 &middot; Comparison</p>
+    <h2>Comparative analysis</h2>
     <div class="table-wrap">
       <table>
         <thead>
@@ -1132,14 +1154,23 @@ flowchart TD
   </div>
 </section>
 
-<!-- ============================================================
-     CODE / BUILD
-============================================================ -->
+<!-- code -->
 <section id="code">
   <div class="container">
-    <h2><span class="sec-num">9</span>Repository &amp; Build</h2>
+    <p class="section-label">09 &middot; Code &amp; Build</p>
+    <h2>Repository &amp; API</h2>
 
-    <h3>Key Files</h3>
+    <h3>Web dashboard</h3>
+    <p style="font-size:.88rem;color:var(--muted);margin-bottom:.8rem;">
+      Served at the ESP32&rsquo;s IP on port 80 after Wi-Fi connects. Shows live JPEG camera feed,
+      detection state, training controls, camera settings, and servo controls.
+    </p>
+    <div class="img-wrap" style="margin-bottom:2rem;">
+      <img src="mira_webui.png" alt="MIRA web dashboard: camera feed, detection panel, training UI, servo controls" />
+      <div class="img-caption">MIRA 2.0 web dashboard &mdash; camera feed, detection state, training, and servo controls</div>
+    </div>
+
+    <h3>Key files</h3>
     <div class="grid2">
       <div class="card">
         <span class="badge badge-blue">CPRE 5450 New</span>
@@ -1215,12 +1246,11 @@ idf.py -p COM3 flash monitor</code></pre>
   </div>
 </section>
 
-<!-- ============================================================
-     REFERENCES
-============================================================ -->
+<!-- references -->
 <section id="references">
   <div class="container">
-    <h2><span class="sec-num">10</span>References</h2>
+    <p class="section-label">10 &middot; References</p>
+    <h2>Bibliography</h2>
     <ol style="font-size:.9rem; line-height:1.9;">
       <li>A. Avizienis, J.-C. Laprie, B. Randell, and C. Landwehr, "Basic Concepts and Taxonomy of Dependable and Secure Computing," <em>IEEE Trans. Dependable Secure Comput.</em>, vol. 1, no. 1, pp. 11–33, 2004.</li>
       <li>S. Li and R. Hishiyama, "An Indoor People Counting and Tracking System Using mmWave Sensor and Sub-sensors," <em>IFAC-PapersOnLine</em>, 2023.</li>
@@ -1243,7 +1273,7 @@ idf.py -p COM3 flash monitor</code></pre>
 <footer>
   <p>
     MIRA 2.0 &mdash; Fault-Tolerant Multimodal Presence Verification on ESP32-S3<br />
-    CPRE 5450 Dependable Computing Systems &bull; Iowa State University, Spring 2026<br />
+    CPRE 5450 Fault Tolerant Systems &bull; Iowa State University, Spring 2026<br />
     Shobhit Singh &bull;
     <a href="https://github.com/Shi6aSK/MIRA-2.0" target="_blank" rel="noopener">github.com/Shi6aSK/MIRA-2.0</a>
   </p>
@@ -1252,25 +1282,14 @@ idf.py -p COM3 flash monitor</code></pre>
 <!-- ============================================================
      SCRIPTS
 ============================================================ -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
 <script type="module">
   import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
   mermaid.initialize({
     startOnLoad: true,
     theme: 'neutral',
-    flowchart: { useMaxWidth: true, htmlLabels: true },
+    flowchart: { useMaxWidth: true, htmlLabels: true, curve: 'basis' },
     sequence:   { useMaxWidth: true },
     fontSize: 13
-  });
-</script>
-<script>
-  document.addEventListener('DOMContentLoaded', () => {
-    document.querySelectorAll('pre code').forEach(block => {
-      // Skip mermaid blocks (they're already handled)
-      if (!block.closest('pre.mermaid')) {
-        hljs.highlightElement(block);
-      }
-    });
   });
 </script>
 </body>

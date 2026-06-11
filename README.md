@@ -702,3 +702,7 @@ const char *    ft_state_name(ft_state_t s);
 ---
 
 *Iowa State University - CPRE 5450: Dependable Computing Systems - Spring 2026*
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
